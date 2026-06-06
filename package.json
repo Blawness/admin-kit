@@ -1,6 +1,6 @@
 {
   "name": "@blawness/admin-kit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Reusable CMS core for Next.js 16 admin panels — auth, media, users, editor, shell",
   "license": "MIT",
   "author": "Blawness",
@@ -14,7 +14,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/Blawness/admin-kit.git"
+    "url": "git+https://github.com/Blawness/admin-kit.git"
   },
   "homepage": "https://github.com/Blawness/admin-kit",
   "private": false,
@@ -31,6 +31,74 @@
     "./components": {
       "types": "./dist/components.d.ts",
       "default": "./dist/components.js"
+    },
+    "./auth": {
+      "types": "./dist/auth/index.d.ts",
+      "default": "./dist/auth/index.js"
+    },
+    "./auth/config": {
+      "types": "./dist/auth/config.d.ts",
+      "default": "./dist/auth/config.js"
+    },
+    "./auth-helpers": {
+      "types": "./dist/lib/auth-helpers.d.ts",
+      "default": "./dist/lib/auth-helpers.js"
+    },
+    "./db": {
+      "types": "./dist/db/index.d.ts",
+      "default": "./dist/db/index.js"
+    },
+    "./schema": {
+      "types": "./dist/db/schema.d.ts",
+      "default": "./dist/db/schema.js"
+    },
+    "./admin/media": {
+      "types": "./dist/lib/admin/media.d.ts",
+      "default": "./dist/lib/admin/media.js"
+    },
+    "./admin/users": {
+      "types": "./dist/lib/admin/users.d.ts",
+      "default": "./dist/lib/admin/users.js"
+    },
+    "./screens/login": {
+      "types": "./dist/screens/login/page.d.ts",
+      "default": "./dist/screens/login/page.js"
+    },
+    "./screens/login/actions": {
+      "types": "./dist/screens/login/actions.d.ts",
+      "default": "./dist/screens/login/actions.js"
+    },
+    "./screens/media": {
+      "types": "./dist/screens/media/page.d.ts",
+      "default": "./dist/screens/media/page.js"
+    },
+    "./screens/media/actions": {
+      "types": "./dist/screens/media/actions.d.ts",
+      "default": "./dist/screens/media/actions.js"
+    },
+    "./screens/media/lib": {
+      "types": "./dist/screens/media/lib.d.ts",
+      "default": "./dist/screens/media/lib.js"
+    },
+    "./screens/users": {
+      "types": "./dist/screens/users/page.d.ts",
+      "default": "./dist/screens/users/page.js"
+    },
+    "./screens/users/actions": {
+      "types": "./dist/screens/users/actions.d.ts",
+      "default": "./dist/screens/users/actions.js"
+    },
+    "./shell": {
+      "types": "./dist/shell/layout.d.ts",
+      "default": "./dist/shell/layout.js"
+    },
+    "./shell/sidebar": {
+      "types": "./dist/shell/sidebar.d.ts",
+      "default": "./dist/shell/sidebar.js"
+    },
+    "./shell/actions": {
+      "types": "./dist/shell/actions.d.ts",
+      "default": "./dist/shell/actions.js"
     }
   },
   "scripts": {
