@@ -6,9 +6,13 @@ import { AdminSidebar, type NavItem } from "./sidebar";
 export async function AdminLayout({
   navItems,
   children,
+  logoSrc,
+  brandName,
 }: {
   navItems: NavItem[];
   children: ReactNode;
+  logoSrc?: string;
+  brandName?: string;
 }) {
   const session = await auth();
 
@@ -22,7 +26,7 @@ export async function AdminLayout({
 
   return (
     <div className="flex min-h-screen bg-navy-50/60">
-      <AdminSidebar role={session.user.role} navItems={navItems} />
+      <AdminSidebar role={session.user.role} navItems={navItems} logoSrc={logoSrc} brandName={brandName} />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-navy-100 bg-white/80 px-6 backdrop-blur-sm">
           <span className="text-sm font-medium text-navy-500">Panel Admin</span>

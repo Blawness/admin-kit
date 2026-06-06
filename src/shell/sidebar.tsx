@@ -13,15 +13,15 @@ export type NavItem = {
   adminOnly?: boolean;
 };
 
-export function AdminSidebar({ role, navItems }: { role: string; navItems: NavItem[] }) {
+export function AdminSidebar({ role, navItems, logoSrc = "/logo.png", brandName = "Admin" }: { role: string; navItems: NavItem[]; logoSrc?: string; brandName?: string }) {
   const pathname = usePathname();
   return (
     <aside className="flex w-60 shrink-0 flex-col bg-gradient-to-b from-navy-900 to-navy-950 text-navy-100">
       <div className="flex h-16 items-center gap-2.5 border-b border-white/5 px-5">
         {/* eslint-disable-next-line @next/next/no-img-element -- static logo */}
-        <img src="/logo.png" alt="" className="h-8 w-8" />
+        <img src={logoSrc} alt="" className="h-8 w-8" />
         <div className="leading-none">
-          <p className="font-heading text-sm font-extrabold text-white">LIPAN RI</p>
+          <p className="font-heading text-sm font-extrabold text-white">{brandName}</p>
           <p className="mt-1 text-[10px] font-semibold tracking-[0.22em] text-gold-400">
             ADMIN
           </p>
