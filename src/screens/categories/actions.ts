@@ -20,15 +20,19 @@ export async function createCategoryAction(fd: FormData) {
   }
   try {
     await createCategory(result.data);
-  } catch {
-    redirect(`/admin/categories?error=${encodeURIComponent("Kategori sudah ada.")}`);
+  } catch (e) {
+    const isUniqueViolation = (e as { code?: string }).code === "23505";
+    const msg = isUniqueViolation ? "Kategori sudah ada." : "Terjadi kesalahan, coba lagi.";
+    redirect(`/admin/categories?error=${encodeURIComponent(msg)}`);
   }
   redirect("/admin/categories");
 }
 
 export async function deleteCategoryAction(fd: FormData) {
   await requireAdmin();
-  await deleteCategory(Number(fd.get("id")));
+  const id = Number(fd.get("id"));
+  if (!id || isNaN(id)) redirect("/admin/categories");
+  await deleteCategory(id);
   redirect("/admin/categories");
 }
 
@@ -40,14 +44,18 @@ export async function createTagAction(fd: FormData) {
   }
   try {
     await createTag(result.data);
-  } catch {
-    redirect(`/admin/categories?error=${encodeURIComponent("Tag sudah ada.")}`);
+  } catch (e) {
+    const isUniqueViolation = (e as { code?: string }).code === "23505";
+    const msg = isUniqueViolation ? "Tag sudah ada." : "Terjadi kesalahan, coba lagi.";
+    redirect(`/admin/categories?error=${encodeURIComponent(msg)}`);
   }
   redirect("/admin/categories");
 }
 
 export async function deleteTagAction(fd: FormData) {
   await requireAdmin();
-  await deleteTag(Number(fd.get("id")));
+  const id = Number(fd.get("id"));
+  if (!id || isNaN(id)) redirect("/admin/categories");
+  await deleteTag(id);
   redirect("/admin/categories");
 }
