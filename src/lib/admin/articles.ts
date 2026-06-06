@@ -112,26 +112,28 @@ export async function createArticle(
   },
   authorId: number
 ) {
-  const [article] = await db
-    .insert(articles)
-    .values({
-      title: data.title,
-      slug: data.slug,
-      content: data.content,
-      coverImageUrl: data.coverImageUrl,
-      categoryId: data.categoryId,
-      authorId,
-      status: "draft",
-    })
-    .returning({ id: articles.id });
+  return db.transaction(async (tx) => {
+    const [article] = await tx
+      .insert(articles)
+      .values({
+        title: data.title,
+        slug: data.slug,
+        content: data.content,
+        coverImageUrl: data.coverImageUrl,
+        categoryId: data.categoryId,
+        authorId,
+        status: "draft",
+      })
+      .returning({ id: articles.id });
 
-  if (data.tagIds && data.tagIds.length > 0) {
-    await db
-      .insert(articleTags)
-      .values(data.tagIds.map((tagId) => ({ articleId: article.id, tagId })));
-  }
+    if (data.tagIds && data.tagIds.length > 0) {
+      await tx
+        .insert(articleTags)
+        .values(data.tagIds.map((tagId) => ({ articleId: article.id, tagId })));
+    }
 
-  return article;
+    return article;
+  });
 }
 
 export async function updateArticle(
@@ -146,37 +148,43 @@ export async function updateArticle(
   },
   ctx: { userId: number; isAdmin: boolean }
 ) {
-  const existing = await getArticleById(id);
+  const [existing] = await db
+    .select({ authorId: articles.authorId })
+    .from(articles)
+    .where(eq(articles.id, id));
   if (!existing) throw new Error("Artikel tidak ditemukan.");
   if (!ctx.isAdmin && existing.authorId !== ctx.userId)
     throw new Error("Tidak diizinkan mengedit artikel ini.");
 
-  await db
-    .update(articles)
-    .set({
-      ...(data.title !== undefined && { title: data.title }),
-      ...(data.slug !== undefined && { slug: data.slug }),
-      ...(data.content !== undefined && { content: data.content }),
-      ...(data.coverImageUrl !== undefined && { coverImageUrl: data.coverImageUrl }),
-      ...("categoryId" in data && { categoryId: data.categoryId }),
-      updatedAt: new Date(),
-    })
-    .where(eq(articles.id, id));
+  await db.transaction(async (tx) => {
+    await tx
+      .update(articles)
+      .set({
+        ...(data.title !== undefined && { title: data.title }),
+        ...(data.slug !== undefined && { slug: data.slug }),
+        ...(data.content !== undefined && { content: data.content }),
+        ...(data.coverImageUrl !== undefined && { coverImageUrl: data.coverImageUrl }),
+        ...("categoryId" in data && { categoryId: data.categoryId }),
+        updatedAt: new Date(),
+      })
+      .where(eq(articles.id, id));
 
-  if (data.tagIds !== undefined) {
-    await db.delete(articleTags).where(eq(articleTags.articleId, id));
-    if (data.tagIds.length > 0) {
-      await db
-        .insert(articleTags)
-        .values(data.tagIds.map((tagId) => ({ articleId: id, tagId })));
+    if (data.tagIds !== undefined) {
+      await tx.delete(articleTags).where(eq(articleTags.articleId, id));
+      if (data.tagIds.length > 0) {
+        await tx
+          .insert(articleTags)
+          .values(data.tagIds.map((tagId) => ({ articleId: id, tagId })));
+      }
     }
-  }
+  });
 }
 
 export async function submitForReview(id: number, userId: number) {
   const existing = await getArticleById(id);
   if (!existing) throw new Error("Artikel tidak ditemukan.");
   if (existing.authorId !== userId) throw new Error("Tidak diizinkan.");
+  if (existing.status === "published") throw new Error("Artikel yang sudah dipublikasi tidak dapat diajukan ulang.");
   const stripped = existing.content?.replace(/<[^>]+>/g, "").trim() ?? "";
   if (!stripped) throw new Error("Konten artikel tidak boleh kosong saat mengajukan review.");
   await db
