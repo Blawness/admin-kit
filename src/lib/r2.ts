@@ -5,6 +5,9 @@ const endpoint = process.env.R2_ENDPOINT;
 const accessKeyId = process.env.R2_ACCESS_KEY_ID;
 const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
 
+if (!endpoint) throw new Error("admin-kit: R2_ENDPOINT env var is required");
+if (!accessKeyId || !secretAccessKey) throw new Error("admin-kit: R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY env vars are required");
+
 export const R2_BUCKET = process.env.R2_BUCKET ?? "lipan-ri";
 /** Base URL publik untuk menyajikan objek (r2.dev atau custom domain), tanpa trailing slash. */
 export const R2_PUBLIC_URL = (process.env.R2_PUBLIC_URL ?? "").replace(/\/$/, "");
