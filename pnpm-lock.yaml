@@ -48,7 +48,7 @@ importers:
         specifier: ^16.2.0
         version: 16.2.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       next-auth:
-        specifier: 5.0.0-beta.31
+        specifier: ^5.0.0-beta.31
         version: 5.0.0-beta.31(next@16.2.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(react@19.2.7)
       postgres:
         specifier: ^3.4.9
@@ -78,9 +78,6 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
-      '@types/bcryptjs':
-        specifier: ^3.0.0
-        version: 3.0.0
       '@types/react':
         specifier: ^19
         version: 19.2.16
@@ -668,10 +665,6 @@ packages:
 
   '@tiptap/starter-kit@3.26.0':
     resolution: {integrity: sha512-o34EtMfqtBaljdmeElZsRG/067oGx9Zcq+j2GWo71KlZe22ga/ALexeTf1c+ETsjCxSTKR6eyQ4RZvz/2JpYfg==}
-
-  '@types/bcryptjs@3.0.0':
-    resolution: {integrity: sha512-WRZOuCuaz8UcZZE4R5HXTco2goQSI2XxjGY3hbM/xDvwmqFWd4ivooImsMx65OKM6CtNKbnZ5YL+YwAwK7c1dg==}
-    deprecated: This is a stub types definition. bcryptjs provides its own type definitions, so you do not need this installed.
 
   '@types/react-dom@19.2.3':
     resolution: {integrity: sha512-jp2L/eY6fn+KgVVQAOqYItbF0VY/YApe5Mz2F0aykSO8gx31bYCZyvSeYxCHKvzHG5eZjc+zyaS5BrBWya2+kQ==}
@@ -1717,10 +1710,6 @@ snapshots:
       '@tiptap/extension-underline': 3.26.0(@tiptap/core@3.26.0(@tiptap/pm@3.26.0))
       '@tiptap/extensions': 3.26.0(@tiptap/core@3.26.0(@tiptap/pm@3.26.0))(@tiptap/pm@3.26.0)
       '@tiptap/pm': 3.26.0
-
-  '@types/bcryptjs@3.0.0':
-    dependencies:
-      bcryptjs: 3.0.3
 
   '@types/react-dom@19.2.3(@types/react@19.2.16)':
     dependencies:
