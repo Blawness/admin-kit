@@ -12,3 +12,6 @@ export {
   DialogTitle,
   DialogTrigger,
 } from "./components/ui/dialog";
+export * from "./components/admin/editor";
+export * from "./components/admin/image-upload";
+export * from "./components/admin/toast-on-param";
