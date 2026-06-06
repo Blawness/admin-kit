@@ -1,4 +1,5 @@
 import { listMedia } from "../../lib/admin/media";
+import { requireUser } from "../../lib/auth-helpers";
 import { ConfirmDelete } from "../../components/confirm-delete";
 import { GalleryUploader } from "./uploader";
 import { Trash2, ImageOff, AlertCircle } from "lucide-react";
@@ -12,6 +13,7 @@ export default async function MediaLibraryScreen({
   deleteAction: (fd: FormData) => Promise<void>;
   searchParams: Promise<{ error?: string }>;
 }) {
+  await requireUser();
   const items = await listMedia();
   const { error } = await searchParams;
 
