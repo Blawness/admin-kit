@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
-import type { ComponentType } from "react";
+import type { ReactNode } from "react";
 import { signOutAction } from "./actions";
 
 export type NavItem = {
   href: string;
   label: string;
-  icon: ComponentType<{ className?: string }>;
+  icon: ReactNode;
   adminOnly?: boolean;
 };
 
@@ -35,7 +35,6 @@ export function AdminSidebar({ role, navItems, logoSrc = "/logo.png", brandName 
             const active =
               pathname === l.href ||
               (l.href !== "/admin" && pathname.startsWith(l.href));
-            const Icon = l.icon;
             return (
               <Link
                 key={l.href}
@@ -49,9 +48,9 @@ export function AdminSidebar({ role, navItems, logoSrc = "/logo.png", brandName 
                 {active && (
                   <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-gold-400" />
                 )}
-                <Icon
-                  className={`h-4 w-4 ${active ? "text-gold-400" : "text-navy-300"}`}
-                />
+                <span className={`h-4 w-4 shrink-0 ${active ? "text-gold-400" : "text-navy-300"}`}>
+                  {l.icon}
+                </span>
                 {l.label}
               </Link>
             );
