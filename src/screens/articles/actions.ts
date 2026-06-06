@@ -55,15 +55,17 @@ export async function createArticleAction(fd: FormData) {
   const { content, ...rest } = parsed.data;
   const sanitized = content ? sanitizeHtml(content) : undefined;
 
-  let articleId = 0;
+  let articleId!: number;
   try {
     const article = await createArticle(
       { ...rest, content: sanitized, categoryId: parseCategoryId(fd), tagIds: parseTagIds(fd) },
       Number(session.user.id)
     );
     articleId = article.id;
-  } catch {
-    redirect(`/admin/articles/new?error=${encodeURIComponent("Slug sudah digunakan.")}`);
+  } catch (e) {
+    const isUniqueViolation = (e as { code?: string }).code === "23505";
+    const msg = isUniqueViolation ? "Slug sudah digunakan." : "Gagal membuat artikel.";
+    redirect(`/admin/articles/new?error=${encodeURIComponent(msg)}`);
   }
 
   if (intent === "review") {
@@ -81,6 +83,7 @@ export async function createArticleAction(fd: FormData) {
 export async function updateArticleAction(fd: FormData) {
   const session = await requireUser();
   const id = Number(fd.get("id"));
+  if (!id || isNaN(id)) redirect("/admin/articles");
   const intent = fd.get("intent") as "draft" | "review";
 
   const parsed = articleSchema.safeParse({
@@ -123,18 +126,24 @@ export async function updateArticleAction(fd: FormData) {
 
 export async function publishArticleAction(fd: FormData) {
   await requireAdmin();
-  await publishArticle(Number(fd.get("id")));
+  const id = Number(fd.get("id"));
+  if (!id || isNaN(id)) redirect("/admin/articles");
+  await publishArticle(id);
   redirect("/admin/articles");
 }
 
 export async function rejectArticleAction(fd: FormData) {
   await requireAdmin();
-  await rejectArticle(Number(fd.get("id")));
+  const id = Number(fd.get("id"));
+  if (!id || isNaN(id)) redirect("/admin/articles");
+  await rejectArticle(id);
   redirect("/admin/articles");
 }
 
 export async function deleteArticleAction(fd: FormData) {
   await requireAdmin();
-  await deleteArticle(Number(fd.get("id")));
+  const id = Number(fd.get("id"));
+  if (!id || isNaN(id)) redirect("/admin/articles");
+  await deleteArticle(id);
   redirect("/admin/articles");
 }
