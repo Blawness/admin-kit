@@ -5,16 +5,19 @@ import { requireUser } from "../../lib/auth-helpers";
 import { uploadImage } from "../../lib/r2";
 import { db } from "../../db/index";
 import { media } from "../../db/schema";
-
-const MAX_BYTES = 8 * 1024 * 1024;
-const OK_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+import { OK_IMAGE_TYPES, MAX_IMAGE_BYTES } from "../../lib/upload-constants";
 
 export async function uploadImageAction(formData: FormData): Promise<{ url?: string; error?: string }> {
   await requireUser();
   const file = formData.get("file");
   if (!(file instanceof File)) return { error: "Tidak ada berkas." };
-  if (!OK_TYPES.includes(file.type)) return { error: "Format gambar tidak didukung." };
-  if (file.size > MAX_BYTES) return { error: "Ukuran gambar maksimal 8MB." };
+  if (!OK_IMAGE_TYPES.includes(file.type)) return { error: "Format gambar tidak didukung." };
+  if (file.size > MAX_IMAGE_BYTES) return { error: "Ukuran gambar maksimal 8MB." };
+
+  // Tandai sumber unggahan (mis. "gallery" atau "cover") agar konsumen bisa
+  // membedakan/membersihkan media. Default ke "gallery" bila tidak diisi.
+  const albumRaw = formData.get("album");
+  const album = typeof albumRaw === "string" && albumRaw.trim() ? albumRaw.trim() : "gallery";
 
   const buf = Buffer.from(await file.arrayBuffer());
   const keyBase = `uploads/${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -28,7 +31,7 @@ export async function uploadImageAction(formData: FormData): Promise<{ url?: str
     return { error: "Gambar gagal diproses. Pastikan berkas benar-benar gambar." };
   }
 
-  await db.insert(media).values({ url, altText: file.name });
+  await db.insert(media).values({ url, altText: file.name, album });
   revalidatePath("/admin/media");
   return { url };
 }

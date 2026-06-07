@@ -16,11 +16,11 @@ export const dynamic = "force-dynamic";
 export default async function CategoriesScreen({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; catName?: string; tagName?: string }>;
 }) {
   await requireAdmin();
   const [categories, tags] = await Promise.all([listCategories(), listTags()]);
-  const { error } = await searchParams;
+  const { error, catName, tagName } = await searchParams;
 
   return (
     <div className="max-w-2xl space-y-8">
@@ -48,7 +48,7 @@ export default async function CategoriesScreen({
           Kategori ({categories.length})
         </h2>
         <form action={createCategoryAction} className="mb-4 flex gap-2">
-          <Input name="name" placeholder="Nama kategori" required className="flex-1" />
+          <Input name="name" placeholder="Nama kategori" required className="flex-1" defaultValue={catName} />
           <Button type="submit" size="sm">
             <Plus className="h-4 w-4" />
             Tambah
@@ -89,7 +89,7 @@ export default async function CategoriesScreen({
           Tag ({tags.length})
         </h2>
         <form action={createTagAction} className="mb-4 flex gap-2">
-          <Input name="name" placeholder="Nama tag" required className="flex-1" />
+          <Input name="name" placeholder="Nama tag" required className="flex-1" defaultValue={tagName} />
           <Button type="submit" size="sm">
             <Plus className="h-4 w-4" />
             Tambah

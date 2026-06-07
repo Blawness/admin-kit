@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireAdmin } from "../../lib/auth-helpers";
+import { isUniqueViolation } from "../../lib/db-errors";
 import {
   createCategory,
   deleteCategory,
@@ -14,16 +15,21 @@ const nameSchema = z.string().min(1, "Nama tidak boleh kosong").max(100);
 
 export async function createCategoryAction(fd: FormData) {
   await requireAdmin();
+  const name = String(fd.get("name") ?? "");
   const result = nameSchema.safeParse(fd.get("name"));
   if (!result.success) {
-    redirect(`/admin/categories?error=${encodeURIComponent(result.error.issues[0].message)}`);
+    // Preserve the attempted value so the form can pre-fill on error.
+    redirect(
+      `/admin/categories?error=${encodeURIComponent(result.error.issues[0].message)}&catName=${encodeURIComponent(name)}`,
+    );
   }
   try {
     await createCategory(result.data);
   } catch (e) {
-    const isUniqueViolation = (e as { code?: string }).code === "23505";
-    const msg = isUniqueViolation ? "Kategori sudah ada." : "Terjadi kesalahan, coba lagi.";
-    redirect(`/admin/categories?error=${encodeURIComponent(msg)}`);
+    const msg = isUniqueViolation(e) ? "Kategori sudah ada." : "Terjadi kesalahan, coba lagi.";
+    redirect(
+      `/admin/categories?error=${encodeURIComponent(msg)}&catName=${encodeURIComponent(name)}`,
+    );
   }
   redirect("/admin/categories");
 }
@@ -38,16 +44,20 @@ export async function deleteCategoryAction(fd: FormData) {
 
 export async function createTagAction(fd: FormData) {
   await requireAdmin();
+  const name = String(fd.get("name") ?? "");
   const result = nameSchema.safeParse(fd.get("name"));
   if (!result.success) {
-    redirect(`/admin/categories?error=${encodeURIComponent(result.error.issues[0].message)}`);
+    redirect(
+      `/admin/categories?error=${encodeURIComponent(result.error.issues[0].message)}&tagName=${encodeURIComponent(name)}`,
+    );
   }
   try {
     await createTag(result.data);
   } catch (e) {
-    const isUniqueViolation = (e as { code?: string }).code === "23505";
-    const msg = isUniqueViolation ? "Tag sudah ada." : "Terjadi kesalahan, coba lagi.";
-    redirect(`/admin/categories?error=${encodeURIComponent(msg)}`);
+    const msg = isUniqueViolation(e) ? "Tag sudah ada." : "Terjadi kesalahan, coba lagi.";
+    redirect(
+      `/admin/categories?error=${encodeURIComponent(msg)}&tagName=${encodeURIComponent(name)}`,
+    );
   }
   redirect("/admin/categories");
 }

@@ -16,6 +16,12 @@ const createSchema = z.object({
 
 export async function createUserAction(formData: FormData) {
   await requireAdmin();
+  const rawEmail = String(formData.get("email") ?? "");
+  const rawName = String(formData.get("name") ?? "");
+  const rawRole = String(formData.get("role") ?? "");
+  // Preserve non-secret fields on error so the form can pre-fill them.
+  // Never echo back the password.
+  const keep = `&email=${encodeURIComponent(rawEmail)}&name=${encodeURIComponent(rawName)}&role=${encodeURIComponent(rawRole)}`;
   const parsed = createSchema.safeParse({
     email: formData.get("email"),
     name: formData.get("name"),
@@ -23,14 +29,16 @@ export async function createUserAction(formData: FormData) {
     role: formData.get("role"),
   });
   if (!parsed.success) {
-    redirect("/admin/users?error=Data+tidak+valid+(email+benar,+password+min+8+karakter)");
+    redirect(
+      `/admin/users?error=Data+tidak+valid+(email+benar,+password+min+8+karakter)${keep}`,
+    );
   }
   const { email, name, password, role } = parsed.data;
   try {
     await createUser(email, name, password, role);
   } catch (e) {
     if (isUniqueViolation(e)) {
-      redirect("/admin/users?error=Email+sudah+terdaftar");
+      redirect(`/admin/users?error=Email+sudah+terdaftar${keep}`);
     }
     throw e;
   }

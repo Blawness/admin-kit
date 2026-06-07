@@ -16,9 +16,13 @@ export async function loginAction(
       redirect: false,
     });
 
-    // Auth.js returns the redirect URL when redirect:false
-    // On failure it returns a URL with ?error= param
-    if (typeof result === "string" && result.includes("error=")) {
+    // Robust failure detection across next-auth v5 beta versions:
+    // treat any "error" indicator (case-insensitive) or a null/undefined
+    // result as a failure. Only redirect when signIn clearly succeeded.
+    const failed =
+      result == null ||
+      (typeof result === "string" && result.toLowerCase().includes("error"));
+    if (failed) {
       return { error: "Email atau password salah." };
     }
 

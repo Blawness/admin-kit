@@ -14,11 +14,16 @@ const selectClass =
 export default async function UsersScreen({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    email?: string;
+    name?: string;
+    role?: string;
+  }>;
 }) {
   const session = await requireAdmin();
   const rows = await listUsers();
-  const { error } = await searchParams;
+  const { error, email, name, role } = await searchParams;
 
   return (
     <div className="max-w-3xl">
@@ -40,10 +45,10 @@ export default async function UsersScreen({
           <UserPlus className="h-4 w-4 text-brand-600" />
           Tambah user baru
         </p>
-        <Input name="name" placeholder="Nama" required />
-        <Input name="email" type="email" placeholder="Email" required />
+        <Input name="name" placeholder="Nama" required defaultValue={name} />
+        <Input name="email" type="email" placeholder="Email" required defaultValue={email} />
         <Input name="password" type="password" placeholder="Password (min 8)" required />
-        <select name="role" className={selectClass}>
+        <select name="role" className={selectClass} defaultValue={role === "admin" ? "admin" : "editor"}>
           <option value="editor">Editor</option>
           <option value="admin">Admin</option>
         </select>

@@ -2,10 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { UploadCloud, Loader2, AlertCircle } from "lucide-react";
-
-// Mirror the server action (src/app/admin/media/actions.ts) — keep in sync.
-const OK_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-const MAX_BYTES = 8 * 1024 * 1024;
+import { OK_IMAGE_TYPES, MAX_IMAGE_BYTES } from "../../lib/upload-constants";
 
 /**
  * Clear drag-and-drop / click-to-upload zone backed by the R2 upload action.
@@ -30,11 +27,11 @@ export function ImageUpload({
 
   function upload(file: File | undefined) {
     if (!file) return;
-    if (!OK_TYPES.includes(file.type)) {
+    if (!OK_IMAGE_TYPES.includes(file.type)) {
       setError("Format tidak didukung — gunakan JPG, PNG, WebP, atau GIF.");
       return;
     }
-    if (file.size > MAX_BYTES) {
+    if (file.size > MAX_IMAGE_BYTES) {
       setError("Ukuran gambar maksimal 8MB.");
       return;
     }
