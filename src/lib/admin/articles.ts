@@ -1,6 +1,7 @@
 import { eq, desc, and, type SQL } from "drizzle-orm";
 import { db } from "../../db/index";
 import { articles, users, categories, tags, articleTags } from "../../db/schema";
+import { deleteObjectByUrl } from "../r2";
 
 export type ArticleStatus = "draft" | "pending_review" | "published";
 
@@ -35,7 +36,9 @@ export async function listArticles(filters?: {
     .orderBy(desc(articles.createdAt));
 }
 
-export async function getArticleById(id: number) {
+// Helper bersama untuk getArticleById/getArticleBySlug — ambil satu artikel
+// beserta tag-nya berdasarkan kondisi WHERE apa pun.
+async function getArticleWhere(where: SQL) {
   const [row] = await db
     .select({
       id: articles.id,
@@ -55,40 +58,7 @@ export async function getArticleById(id: number) {
     .from(articles)
     .leftJoin(users, eq(articles.authorId, users.id))
     .leftJoin(categories, eq(articles.categoryId, categories.id))
-    .where(eq(articles.id, id));
-
-  if (!row) return null;
-
-  const articleTagRows = await db
-    .select({ id: tags.id, name: tags.name, slug: tags.slug })
-    .from(tags)
-    .innerJoin(articleTags, eq(articleTags.tagId, tags.id))
-    .where(eq(articleTags.articleId, id));
-
-  return { ...row, tags: articleTagRows };
-}
-
-export async function getArticleBySlug(slug: string) {
-  const [row] = await db
-    .select({
-      id: articles.id,
-      title: articles.title,
-      slug: articles.slug,
-      content: articles.content,
-      coverImageUrl: articles.coverImageUrl,
-      status: articles.status,
-      categoryId: articles.categoryId,
-      categoryName: categories.name,
-      authorId: articles.authorId,
-      authorName: users.name,
-      publishedAt: articles.publishedAt,
-      createdAt: articles.createdAt,
-      updatedAt: articles.updatedAt,
-    })
-    .from(articles)
-    .leftJoin(users, eq(articles.authorId, users.id))
-    .leftJoin(categories, eq(articles.categoryId, categories.id))
-    .where(eq(articles.slug, slug));
+    .where(where);
 
   if (!row) return null;
 
@@ -101,13 +71,21 @@ export async function getArticleBySlug(slug: string) {
   return { ...row, tags: articleTagRows };
 }
 
+export async function getArticleById(id: number) {
+  return getArticleWhere(eq(articles.id, id));
+}
+
+export async function getArticleBySlug(slug: string) {
+  return getArticleWhere(eq(articles.slug, slug));
+}
+
 export async function createArticle(
   data: {
     title: string;
     slug: string;
     content?: string;
     coverImageUrl?: string;
-    categoryId?: number;
+    categoryId?: number | null;
     tagIds?: number[];
   },
   authorId: number
@@ -181,7 +159,14 @@ export async function updateArticle(
 }
 
 export async function submitForReview(id: number, userId: number) {
-  const existing = await getArticleById(id);
+  const [existing] = await db
+    .select({
+      authorId: articles.authorId,
+      status: articles.status,
+      content: articles.content,
+    })
+    .from(articles)
+    .where(eq(articles.id, id));
   if (!existing) throw new Error("Artikel tidak ditemukan.");
   if (existing.authorId !== userId) throw new Error("Tidak diizinkan.");
   if (existing.status === "published") throw new Error("Artikel yang sudah dipublikasi tidak dapat diajukan ulang.");
@@ -194,6 +179,13 @@ export async function submitForReview(id: number, userId: number) {
 }
 
 export async function publishArticle(id: number) {
+  const [existing] = await db
+    .select({ status: articles.status })
+    .from(articles)
+    .where(eq(articles.id, id));
+  if (!existing) throw new Error("Artikel tidak ditemukan.");
+  if (existing.status !== "pending_review")
+    throw new Error("Hanya artikel yang menunggu review yang dapat dipublikasi.");
   await db
     .update(articles)
     .set({ status: "published", publishedAt: new Date(), updatedAt: new Date() })
@@ -201,6 +193,13 @@ export async function publishArticle(id: number) {
 }
 
 export async function rejectArticle(id: number) {
+  const [existing] = await db
+    .select({ status: articles.status })
+    .from(articles)
+    .where(eq(articles.id, id));
+  if (!existing) throw new Error("Artikel tidak ditemukan.");
+  if (existing.status !== "pending_review")
+    throw new Error("Hanya artikel yang menunggu review yang dapat ditolak.");
   await db
     .update(articles)
     .set({ status: "draft", updatedAt: new Date() })
@@ -208,5 +207,16 @@ export async function rejectArticle(id: number) {
 }
 
 export async function deleteArticle(id: number) {
+  const [existing] = await db
+    .select({ coverImageUrl: articles.coverImageUrl })
+    .from(articles)
+    .where(eq(articles.id, id));
+
   await db.delete(articles).where(eq(articles.id, id));
+
+  // Hapus cover di R2 setelah baris terhapus agar kegagalan storage tidak
+  // menghalangi penghapusan record. URL non-R2 diabaikan dengan aman.
+  if (existing?.coverImageUrl) {
+    await deleteObjectByUrl(existing.coverImageUrl);
+  }
 }

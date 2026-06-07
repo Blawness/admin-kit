@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { requireUser, requireAdmin } from "../../lib/auth-helpers";
 import {
@@ -12,12 +13,18 @@ import {
   deleteArticle,
 } from "../../lib/admin/articles";
 import { sanitizeHtml } from "../../lib/sanitize";
+import { isUniqueViolation } from "../../lib/db-errors";
 
 const articleSchema = z.object({
   title: z.string().min(3, "Judul minimal 3 karakter"),
   slug: z
     .string()
-    .regex(/^[a-z0-9-]+$/, "Slug hanya boleh huruf kecil, angka, dan tanda hubung"),
+    .min(1, "Slug wajib diisi")
+    .max(80, "Slug maksimal 80 karakter")
+    .regex(
+      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+      "Slug hanya boleh huruf kecil, angka, dan tanda hubung (tanpa diawali/diakhiri tanda hubung)"
+    ),
   content: z.string().optional(),
   coverImageUrl: z.string().optional(),
 });
@@ -29,11 +36,11 @@ function parseTagIds(fd: FormData): number[] {
     .filter((n) => !isNaN(n) && n > 0);
 }
 
-function parseCategoryId(fd: FormData): number | undefined {
+function parseCategoryId(fd: FormData): number | null {
   const raw = fd.get("categoryId");
-  if (!raw || raw === "") return undefined;
+  if (!raw || raw === "") return null;
   const n = Number(raw);
-  return isNaN(n) ? undefined : n;
+  return isNaN(n) ? null : n;
 }
 
 export async function createArticleAction(fd: FormData) {
@@ -63,10 +70,13 @@ export async function createArticleAction(fd: FormData) {
     );
     articleId = article.id;
   } catch (e) {
-    const isUniqueViolation = (e as { code?: string }).code === "23505";
-    const msg = isUniqueViolation ? "Slug sudah digunakan." : "Gagal membuat artikel.";
+    const msg = isUniqueViolation(e) ? "Slug sudah digunakan." : "Gagal membuat artikel.";
     redirect(`/admin/articles/new?error=${encodeURIComponent(msg)}`);
   }
+
+  // Revalidasi cache publik agar konsumen yang menandai layer baca dengan
+  // "articles" mendapat data terbaru.
+  revalidateTag("articles", "max");
 
   if (intent === "review") {
     try {
@@ -108,9 +118,16 @@ export async function updateArticleAction(fd: FormData) {
       { userId: Number(session.user.id), isAdmin: session.user.role === "admin" }
     );
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Gagal menyimpan artikel.";
+    const msg = isUniqueViolation(e)
+      ? "Slug sudah digunakan."
+      : e instanceof Error
+        ? e.message
+        : "Gagal menyimpan artikel.";
     redirect(`/admin/articles/edit?id=${id}&error=${encodeURIComponent(msg)}`);
   }
+
+  // Revalidasi cache publik agar perubahan terlihat oleh konsumen.
+  revalidateTag("articles", "max");
 
   if (intent === "review") {
     try {
@@ -128,7 +145,14 @@ export async function publishArticleAction(fd: FormData) {
   await requireAdmin();
   const id = Number(fd.get("id"));
   if (!id || isNaN(id)) redirect("/admin/articles");
-  await publishArticle(id);
+  try {
+    await publishArticle(id);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Gagal mempublikasi artikel.";
+    redirect(`/admin/articles?error=${encodeURIComponent(msg)}`);
+  }
+  // Revalidasi cache publik agar artikel yang dipublikasi tampil di konsumen.
+  revalidateTag("articles", "max");
   redirect("/admin/articles");
 }
 
@@ -136,7 +160,14 @@ export async function rejectArticleAction(fd: FormData) {
   await requireAdmin();
   const id = Number(fd.get("id"));
   if (!id || isNaN(id)) redirect("/admin/articles");
-  await rejectArticle(id);
+  try {
+    await rejectArticle(id);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Gagal menolak artikel.";
+    redirect(`/admin/articles?error=${encodeURIComponent(msg)}`);
+  }
+  // Revalidasi cache publik.
+  revalidateTag("articles", "max");
   redirect("/admin/articles");
 }
 
@@ -145,5 +176,7 @@ export async function deleteArticleAction(fd: FormData) {
   const id = Number(fd.get("id"));
   if (!id || isNaN(id)) redirect("/admin/articles");
   await deleteArticle(id);
+  // Revalidasi cache publik agar artikel yang dihapus hilang dari konsumen.
+  revalidateTag("articles", "max");
   redirect("/admin/articles");
 }
