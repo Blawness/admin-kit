@@ -1,6 +1,6 @@
 {
   "name": "@blawness/admin-kit",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Reusable CMS core for Next.js 16 admin panels — auth, media, users, editor, shell",
   "license": "MIT",
   "author": "Blawness",
