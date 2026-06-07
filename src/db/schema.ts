@@ -5,6 +5,7 @@ import {
   timestamp,
   integer,
   primaryKey,
+  index,
 } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
@@ -36,19 +37,28 @@ export const tags = pgTable("tags", {
   slug: text("slug").notNull().unique(),
 });
 
-export const articles = pgTable("articles", {
-  id: serial("id").primaryKey(),
-  title: text("title").notNull(),
-  slug: text("slug").notNull().unique(),
-  content: text("content"),
-  coverImageUrl: text("cover_image_url"),
-  status: text("status").notNull().default("draft"),
-  categoryId: integer("category_id").references(() => categories.id, { onDelete: "set null" }),
-  authorId: integer("author_id").notNull().references(() => users.id),
-  publishedAt: timestamp("published_at"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+export const articles = pgTable(
+  "articles",
+  {
+    id: serial("id").primaryKey(),
+    title: text("title").notNull(),
+    slug: text("slug").notNull().unique(),
+    content: text("content"),
+    coverImageUrl: text("cover_image_url"),
+    status: text("status").notNull().default("draft"),
+    categoryId: integer("category_id").references(() => categories.id, { onDelete: "set null" }),
+    authorId: integer("author_id").notNull().references(() => users.id),
+    publishedAt: timestamp("published_at"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (t) => [
+    index("articles_status_idx").on(t.status),
+    index("articles_author_id_idx").on(t.authorId),
+    index("articles_category_id_idx").on(t.categoryId),
+    index("articles_created_at_idx").on(t.createdAt),
+  ]
+);
 
 export const articleTags = pgTable(
   "article_tags",
