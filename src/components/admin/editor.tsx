@@ -15,7 +15,9 @@ export function Editor({
 }) {
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ heading: { levels: [2, 3, 4] } }),
+      // StarterKit v3 bundles Link; disable it here so the explicit
+      // Link.configure below doesn't register a duplicate "link" extension.
+      StarterKit.configure({ heading: { levels: [2, 3, 4] }, link: false }),
       Link.configure({ openOnClick: false }),
       Image,
     ],
