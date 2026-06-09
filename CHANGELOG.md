@@ -32,6 +32,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and the
 ### Changed
 - Admin article actions reference the shared `ARTICLES_TAG` constant instead of a
   hardcoded string.
+- **Removed `export const dynamic = "force-dynamic"` from all screens.** They are
+  already dynamic (they read the session/`searchParams`), and the directive is
+  incompatible with `cacheComponents` — which the new `/public` layer requires.
+  Consumers can now enable `cacheComponents: true` and use the admin screens and
+  the cached public reads in the same app.
 
 ## [0.4.1] - 2026-06-09
 

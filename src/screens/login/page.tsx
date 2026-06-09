@@ -5,8 +5,6 @@ import { loginAction, type LoginState } from "./actions";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 
-export const dynamic = "force-dynamic";
-
 export default function LoginScreen() {
   const [state, action, pending] = useActionState<LoginState, FormData>(
     loginAction,

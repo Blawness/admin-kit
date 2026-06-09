@@ -6,8 +6,6 @@ import { ConfirmDelete } from "../../components/confirm-delete";
 import { createUserAction, resetPasswordAction, setRoleAction, deleteUserAction } from "./actions";
 import { UserPlus, KeyRound, AlertCircle } from "lucide-react";
 
-export const dynamic = "force-dynamic";
-
 const selectClass =
   "h-9 rounded-md border border-navy-200 bg-white px-2.5 text-sm text-navy-900 outline-none transition-colors focus:border-brand-400 focus:ring-2 focus:ring-brand-100";
 

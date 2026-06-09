@@ -11,8 +11,6 @@ import {
 } from "./actions";
 import { Tag, FolderOpen, AlertCircle, Plus } from "lucide-react";
 
-export const dynamic = "force-dynamic";
-
 export default async function CategoriesScreen({
   searchParams,
 }: {

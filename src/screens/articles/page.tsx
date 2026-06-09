@@ -5,8 +5,6 @@ import { ConfirmDelete } from "../../components/confirm-delete";
 import { deleteArticleAction } from "./actions";
 import { PlusCircle, AlertCircle, FileText, Search } from "lucide-react";
 
-export const dynamic = "force-dynamic";
-
 const PAGE_SIZE = 20;
 
 const STATUS_LABELS: Record<ArticleStatus, string> = {

@@ -5,8 +5,6 @@ import { ConfirmDelete } from "../../components/confirm-delete";
 import { GalleryUploader } from "./uploader";
 import { Trash2, ImageOff, AlertCircle } from "lucide-react";
 
-export const dynamic = "force-dynamic";
-
 const PAGE_SIZE = 24;
 
 export default async function MediaLibraryScreen({
