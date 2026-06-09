@@ -21,6 +21,7 @@ export type PublishedArticleListItem = {
   id: number;
   title: string;
   slug: string;
+  excerpt: string | null;
   coverImageUrl: string | null;
   publishedAt: Date | null;
   categoryName: string | null;
@@ -50,6 +51,7 @@ export async function getPublishedArticles(opts?: {
       id: articles.id,
       title: articles.title,
       slug: articles.slug,
+      excerpt: articles.excerpt,
       coverImageUrl: articles.coverImageUrl,
       publishedAt: articles.publishedAt,
       categoryName: categories.name,
@@ -84,8 +86,13 @@ export async function getPublishedArticleBySlug(slug: string) {
       title: articles.title,
       slug: articles.slug,
       content: articles.content,
+      excerpt: articles.excerpt,
       coverImageUrl: articles.coverImageUrl,
+      metaTitle: articles.metaTitle,
+      metaDescription: articles.metaDescription,
+      ogImage: articles.ogImage,
       publishedAt: articles.publishedAt,
+      updatedAt: articles.updatedAt,
       categoryName: categories.name,
       categorySlug: categories.slug,
       authorName: users.name,

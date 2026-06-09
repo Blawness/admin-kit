@@ -43,6 +43,34 @@ Every read is tagged `ARTICLES_TAG` (`"articles"`); the admin actions call
 public pages refresh automatically. This entry point is isolated — importing the
 rest of the package does **not** require `cacheComponents`.
 
+## SEO & feeds
+
+Articles carry `excerpt`, `metaTitle`, `metaDescription`, and `ogImage` (edit
+them in the article form's SEO section). Generate a sitemap and RSS feed from the
+same cached/tagged layer:
+
+```ts
+// app/sitemap.ts
+import { getSitemapEntries } from "@blawness/admin-kit/public";
+export default async function sitemap() {
+  return getSitemapEntries({ siteUrl: "https://example.com", articleBasePath: "/berita" });
+}
+
+// app/rss.xml/route.ts
+import { generateRssXml } from "@blawness/admin-kit/public";
+export async function GET() {
+  const xml = await generateRssXml({
+    siteUrl: "https://example.com",
+    title: "Berita Example",
+    description: "Artikel terbaru",
+  });
+  return new Response(xml, { headers: { "Content-Type": "application/rss+xml" } });
+}
+```
+
+Apply the migration in `drizzle/0001_*.sql` (`pnpm db:migrate`) before using the
+new fields.
+
 ## Admin list pagination & search
 
 The articles screen now supports `?q=` (title/slug search) and `?page=`

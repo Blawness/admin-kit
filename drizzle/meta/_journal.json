@@ -8,6 +8,13 @@
       "when": 1780858471027,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1781000756373,
+      "tag": "0001_spotty_salo",
+      "breakpoints": true
     }
   ]
 }

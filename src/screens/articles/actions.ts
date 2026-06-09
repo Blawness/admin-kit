@@ -28,7 +28,21 @@ const articleSchema = z.object({
     ),
   content: z.string().optional(),
   coverImageUrl: z.string().optional(),
+  // Optional SEO/discoverability fields — empty strings normalize to undefined
+  // so the DB stores NULL rather than "".
+  excerpt: emptyToUndefined(z.string().max(300, "Ringkasan maksimal 300 karakter")),
+  metaTitle: emptyToUndefined(z.string().max(70, "Meta title maksimal 70 karakter")),
+  metaDescription: emptyToUndefined(z.string().max(200, "Meta description maksimal 200 karakter")),
+  ogImage: emptyToUndefined(z.string()),
 });
+
+/** Treat blank/whitespace input as "not provided" (→ undefined → NULL). */
+function emptyToUndefined(schema: z.ZodString) {
+  return z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+    schema.optional(),
+  );
+}
 
 function parseTagIds(fd: FormData): number[] {
   return fd

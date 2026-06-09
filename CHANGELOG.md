@@ -7,6 +7,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and the
 ## [0.5.0] - 2026-06-09
 
 ### Added
+- **SEO & feeds.** Articles gain `excerpt`, `metaTitle`, `metaDescription`, and
+  `ogImage` columns (migration `0001`), surfaced in the editor (an excerpt field
+  plus a collapsible SEO section) and in the public read layer. New cached
+  `getSitemapEntries({ siteUrl, articleBasePath })` and
+  `generateRssXml({ siteUrl, title, description, … })` helpers
+  (`@blawness/admin-kit/public`) produce a Next.js-compatible sitemap and a
+  ready-to-serve RSS 2.0 document, both tagged `ARTICLES_TAG`. Adds an
+  `escapeXml` helper.
 - **Public cached read layer** — new `@blawness/admin-kit/public` entry point
   exporting `getPublishedArticles({ limit, offset, categorySlug })`,
   `getPublishedArticleBySlug(slug)`, and `getPublishedArticleSlugs()`. Each is

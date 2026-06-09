@@ -81,6 +81,10 @@ async function getArticleWhere(where: SQL) {
       slug: articles.slug,
       content: articles.content,
       coverImageUrl: articles.coverImageUrl,
+      excerpt: articles.excerpt,
+      metaTitle: articles.metaTitle,
+      metaDescription: articles.metaDescription,
+      ogImage: articles.ogImage,
       status: articles.status,
       categoryId: articles.categoryId,
       categoryName: categories.name,
@@ -114,6 +118,14 @@ export async function getArticleBySlug(slug: string) {
   return getArticleWhere(eq(articles.slug, slug));
 }
 
+/** Optional SEO/discoverability fields shared by create & update. */
+export type ArticleSeoInput = {
+  excerpt?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  ogImage?: string;
+};
+
 export async function createArticle(
   data: {
     title: string;
@@ -122,7 +134,7 @@ export async function createArticle(
     coverImageUrl?: string;
     categoryId?: number | null;
     tagIds?: number[];
-  },
+  } & ArticleSeoInput,
   authorId: number
 ) {
   return db.transaction(async (tx) => {
@@ -133,6 +145,10 @@ export async function createArticle(
         slug: data.slug,
         content: data.content,
         coverImageUrl: data.coverImageUrl,
+        excerpt: data.excerpt,
+        metaTitle: data.metaTitle,
+        metaDescription: data.metaDescription,
+        ogImage: data.ogImage,
         categoryId: data.categoryId,
         authorId,
         status: "draft",
@@ -158,7 +174,7 @@ export async function updateArticle(
     coverImageUrl?: string;
     categoryId?: number | null;
     tagIds?: number[];
-  },
+  } & ArticleSeoInput,
   ctx: { userId: number; isAdmin: boolean }
 ) {
   const [existing] = await db
@@ -177,6 +193,10 @@ export async function updateArticle(
         ...(data.slug !== undefined && { slug: data.slug }),
         ...(data.content !== undefined && { content: data.content }),
         ...(data.coverImageUrl !== undefined && { coverImageUrl: data.coverImageUrl }),
+        ...(data.excerpt !== undefined && { excerpt: data.excerpt }),
+        ...(data.metaTitle !== undefined && { metaTitle: data.metaTitle }),
+        ...(data.metaDescription !== undefined && { metaDescription: data.metaDescription }),
+        ...(data.ogImage !== undefined && { ogImage: data.ogImage }),
         ...("categoryId" in data && { categoryId: data.categoryId }),
         updatedAt: new Date(),
       })

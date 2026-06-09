@@ -30,6 +30,10 @@ export type ArticleFormProps = {
     slug: string;
     content: string | null;
     coverImageUrl: string | null;
+    excerpt: string | null;
+    metaTitle: string | null;
+    metaDescription: string | null;
+    ogImage: string | null;
     categoryId: number | null;
     tagIds: number[];
     status: string;
@@ -178,10 +182,60 @@ export function ArticleForm({
           </div>
 
           <div className="space-y-1.5">
+            <label className="text-sm font-medium text-navy-700">Ringkasan</label>
+            <textarea
+              name="excerpt"
+              defaultValue={initial?.excerpt ?? ""}
+              maxLength={300}
+              rows={2}
+              placeholder="Ringkasan singkat untuk kartu artikel, hasil pencarian, dan feed RSS."
+              className="w-full rounded-md border border-navy-200 bg-white px-3 py-2 text-sm text-navy-900 outline-none transition-colors focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+            />
+          </div>
+
+          <div className="space-y-1.5">
             <label className="text-sm font-medium text-navy-700">Konten</label>
             <Editor value={content} onChange={setContent} />
           </div>
         </div>
+
+        {/* SEO — optional overrides for search engines & social cards. */}
+        <details className="rounded-xl border border-navy-100 bg-white shadow-sm">
+          <summary className="cursor-pointer px-6 py-4 text-sm font-semibold text-navy-900">
+            SEO &amp; berbagi (opsional)
+          </summary>
+          <div className="space-y-5 border-t border-navy-50 px-6 py-5">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-navy-700">Meta title</label>
+              <Input
+                name="metaTitle"
+                defaultValue={initial?.metaTitle ?? ""}
+                maxLength={70}
+                placeholder="Kosongkan untuk memakai judul artikel"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-navy-700">Meta description</label>
+              <textarea
+                name="metaDescription"
+                defaultValue={initial?.metaDescription ?? ""}
+                maxLength={200}
+                rows={2}
+                placeholder="Kosongkan untuk memakai ringkasan"
+                className="w-full rounded-md border border-navy-200 bg-white px-3 py-2 text-sm text-navy-900 outline-none transition-colors focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-navy-700">Gambar OG / sosial</label>
+              <Input
+                name="ogImage"
+                type="url"
+                defaultValue={initial?.ogImage ?? ""}
+                placeholder="https://… (kosongkan untuk memakai cover)"
+              />
+            </div>
+          </div>
+        </details>
 
         <div className="flex flex-wrap gap-2">
           <Button type="submit" name="intent" value="draft" variant="outline">
