@@ -1,0 +1,69 @@
+# Changelog
+
+All notable changes to `@blawness/admin-kit` are documented here. This project
+adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and the
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
+
+## [0.4.1] - 2026-06-09
+
+### Fixed
+- **Last-admin lockout.** Demoting (`setRoleAction`) or deleting
+  (`deleteUserAction`) the only remaining `admin` is now rejected with a clear
+  error instead of silently locking everyone out of the admin area. The check
+  runs inside a transaction (`updateUserRole` / `deleteUser`) so it is race-safe,
+  and surfaces a new `LastAdminError` / `isLastAdminError` guard.
+
+## [0.4.0] - 2026-06-09
+
+A large reliability, security, and DX release covering 22 findings.
+
+### Fixed
+- `categoryId` can now be cleared (`number | null`) on create/update.
+- Duplicate-slug attempts are detected on both create **and** update via the
+  shared `isUniqueViolation` helper ("Slug sudah digunakan.").
+- `publishArticle` / `rejectArticle` now guard on `pending_review` status.
+- `deleteArticle` removes the row first, then cleans up the R2 cover object, so
+  a storage failure can't block the delete.
+- Login failure detection hardened (null/undefined or any "error" string ⇒
+  failure) while preserving the `NEXT_REDIRECT` rethrow.
+- Module-load no longer throws: `db`, `r2`, and the R2 bucket/URL are lazily
+  initialized so `next build` in a consumer app doesn't crash when env vars are
+  absent. `R2_BUCKET` is now required (no hardcoded default).
+- Editor: dropped the duplicate Tiptap `link` extension.
+
+### Added
+- Smart image format preservation in `uploadImage`: animated GIF ⇒ animated
+  WebP, alpha/PNG/WebP ⇒ WebP q80, opaque ⇒ mozjpeg JPEG q80, with EXIF
+  orientation respected.
+- Exported `AdminSessionUser` type for consumers across the package boundary.
+- Media uploads accept an optional `album` field (default `"gallery"`).
+- Form input is preserved on validation errors (categories, users, articles) —
+  never the password.
+- Inline editor URL inputs replace `window.prompt()` for links/images, with
+  `aria-label`s on all toolbar buttons.
+- Database indexes on `articles` (`status`, `author_id`, `category_id`,
+  `created_at`).
+- Infra: drizzle-kit migrations (`drizzle/0000_init.sql`), Vitest test suite,
+  flat ESLint config, and a GitHub Actions CI pipeline
+  (typecheck → lint → test → build).
+
+## [0.3.0] - 2026-06
+
+### Added
+- `articles` / `categories` export paths.
+
+## [0.2.1] - 2026-06
+
+### Fixed
+- Packaging and export adjustments.
+
+## [0.2.0] - 2026-06
+
+Initial public iteration of the admin-kit core (auth, media, users, editor,
+admin shell).
+
+[0.4.1]: https://github.com/Blawness/admin-kit/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/Blawness/admin-kit/compare/v0.2.1...v0.4.0
+[0.3.0]: https://github.com/Blawness/admin-kit/releases/tag/v0.3.0
+[0.2.1]: https://github.com/Blawness/admin-kit/releases/tag/v0.2.1
+[0.2.0]: https://github.com/Blawness/admin-kit/releases/tag/v0.2.0

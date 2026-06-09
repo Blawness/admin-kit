@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireAdmin } from "../../lib/auth-helpers";
 import { isUniqueViolation, isForeignKeyViolation } from "../../lib/db-errors";
-import { createUser, updateUserPassword, updateUserRole, deleteUser } from "../../lib/admin/users";
+import { createUser, updateUserPassword, updateUserRole, deleteUser, isLastAdminError } from "../../lib/admin/users";
 
 const createSchema = z.object({
   email: z.string().email(),
@@ -59,7 +59,14 @@ export async function setRoleAction(formData: FormData) {
   const id = Number(formData.get("id"));
   const role = String(formData.get("role") ?? "");
   if (!id || (role !== "admin" && role !== "editor")) return;
-  await updateUserRole(id, role);
+  try {
+    await updateUserRole(id, role);
+  } catch (e) {
+    if (isLastAdminError(e)) {
+      redirect("/admin/users?error=Tidak+bisa+menurunkan+admin+terakhir");
+    }
+    throw e;
+  }
   revalidatePath("/admin/users");
 }
 
@@ -70,6 +77,9 @@ export async function deleteUserAction(formData: FormData) {
   try {
     await deleteUser(id);
   } catch (e) {
+    if (isLastAdminError(e)) {
+      redirect("/admin/users?error=Tidak+bisa+menghapus+admin+terakhir");
+    }
     if (isForeignKeyViolation(e)) {
       redirect("/admin/users?error=User+ini+masih+menjadi+penulis+berita");
     }
