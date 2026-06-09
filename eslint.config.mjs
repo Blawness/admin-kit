@@ -13,7 +13,7 @@ const stubPlugin = (rules) => ({
 
 export default tseslint.config(
   {
-    ignores: ["dist/**", "node_modules/**", "drizzle/**"],
+    ignores: ["dist/**", "node_modules/**", "drizzle/**", "examples/**"],
   },
   {
     files: ["src/**/*.{ts,tsx}", "test/**/*.ts"],
