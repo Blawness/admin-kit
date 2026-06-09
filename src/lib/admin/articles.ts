@@ -1,20 +1,39 @@
-import { eq, desc, and, type SQL } from "drizzle-orm";
+import { eq, desc, and, or, ilike, sql, type SQL } from "drizzle-orm";
 import { db } from "../../db/index";
 import { articles, users, categories, tags, articleTags } from "../../db/schema";
 import { deleteObjectByUrl } from "../r2";
+import { escapeLike } from "../sql-utils";
 
 export type ArticleStatus = "draft" | "pending_review" | "published";
 
-export async function listArticles(filters?: {
+export type ArticleFilters = {
   status?: ArticleStatus;
   authorId?: number;
-}) {
+  /** Free-text search across title and slug (case-insensitive). */
+  q?: string;
+};
+
+// Kondisi WHERE bersama untuk listArticles/countArticles. Hanya menyentuh kolom
+// `articles`, sehingga count tidak perlu ikut join users/categories.
+function articleConditions(filters?: ArticleFilters): SQL[] {
   const conditions: SQL[] = [];
   if (filters?.status) conditions.push(eq(articles.status, filters.status));
   if (filters?.authorId !== undefined)
     conditions.push(eq(articles.authorId, filters.authorId));
+  if (filters?.q && filters.q.trim()) {
+    const term = `%${escapeLike(filters.q.trim())}%`;
+    const match = or(ilike(articles.title, term), ilike(articles.slug, term));
+    if (match) conditions.push(match);
+  }
+  return conditions;
+}
 
-  return db
+export async function listArticles(
+  filters?: ArticleFilters & { limit?: number; offset?: number },
+) {
+  const conditions = articleConditions(filters);
+
+  const query = db
     .select({
       id: articles.id,
       title: articles.title,
@@ -33,7 +52,23 @@ export async function listArticles(filters?: {
     .leftJoin(users, eq(articles.authorId, users.id))
     .leftJoin(categories, eq(articles.categoryId, categories.id))
     .where(conditions.length === 0 ? undefined : and(...conditions))
-    .orderBy(desc(articles.createdAt));
+    .orderBy(desc(articles.createdAt))
+    .$dynamic();
+
+  if (filters?.limit !== undefined) query.limit(filters.limit);
+  if (filters?.offset !== undefined) query.offset(filters.offset);
+
+  return query;
+}
+
+/** Total articles matching the given filters — for pagination controls. */
+export async function countArticles(filters?: ArticleFilters): Promise<number> {
+  const conditions = articleConditions(filters);
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(articles)
+    .where(conditions.length === 0 ? undefined : and(...conditions));
+  return row?.count ?? 0;
 }
 
 // Helper bersama untuk getArticleById/getArticleBySlug — ambil satu artikel

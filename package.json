@@ -1,6 +1,6 @@
 {
   "name": "@blawness/admin-kit",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Reusable CMS core for Next.js 16 admin panels — auth, media, users, editor, shell",
   "license": "MIT",
   "author": "Blawness",
@@ -31,6 +31,10 @@
     "./components": {
       "types": "./dist/components.d.ts",
       "default": "./dist/components.js"
+    },
+    "./public": {
+      "types": "./dist/public.d.ts",
+      "default": "./dist/public.js"
     },
     "./auth": {
       "types": "./dist/auth/index.d.ts",

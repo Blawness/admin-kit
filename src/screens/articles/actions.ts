@@ -14,6 +14,7 @@ import {
 } from "../../lib/admin/articles";
 import { sanitizeHtml } from "../../lib/sanitize";
 import { isUniqueViolation } from "../../lib/db-errors";
+import { ARTICLES_TAG } from "../../lib/cache-tags";
 
 const articleSchema = z.object({
   title: z.string().min(3, "Judul minimal 3 karakter"),
@@ -76,7 +77,7 @@ export async function createArticleAction(fd: FormData) {
 
   // Revalidasi cache publik agar konsumen yang menandai layer baca dengan
   // "articles" mendapat data terbaru.
-  revalidateTag("articles", "max");
+  revalidateTag(ARTICLES_TAG, "max");
 
   if (intent === "review") {
     try {
@@ -127,7 +128,7 @@ export async function updateArticleAction(fd: FormData) {
   }
 
   // Revalidasi cache publik agar perubahan terlihat oleh konsumen.
-  revalidateTag("articles", "max");
+  revalidateTag(ARTICLES_TAG, "max");
 
   if (intent === "review") {
     try {
@@ -152,7 +153,7 @@ export async function publishArticleAction(fd: FormData) {
     redirect(`/admin/articles?error=${encodeURIComponent(msg)}`);
   }
   // Revalidasi cache publik agar artikel yang dipublikasi tampil di konsumen.
-  revalidateTag("articles", "max");
+  revalidateTag(ARTICLES_TAG, "max");
   redirect("/admin/articles");
 }
 
@@ -167,7 +168,7 @@ export async function rejectArticleAction(fd: FormData) {
     redirect(`/admin/articles?error=${encodeURIComponent(msg)}`);
   }
   // Revalidasi cache publik.
-  revalidateTag("articles", "max");
+  revalidateTag(ARTICLES_TAG, "max");
   redirect("/admin/articles");
 }
 
@@ -177,6 +178,6 @@ export async function deleteArticleAction(fd: FormData) {
   if (!id || isNaN(id)) redirect("/admin/articles");
   await deleteArticle(id);
   // Revalidasi cache publik agar artikel yang dihapus hilang dari konsumen.
-  revalidateTag("articles", "max");
+  revalidateTag(ARTICLES_TAG, "max");
   redirect("/admin/articles");
 }

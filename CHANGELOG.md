@@ -4,6 +4,27 @@ All notable changes to `@blawness/admin-kit` are documented here. This project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and the
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
+## [0.5.0] - 2026-06-09
+
+### Added
+- **Public cached read layer** — new `@blawness/admin-kit/public` entry point
+  exporting `getPublishedArticles({ limit, offset, categorySlug })`,
+  `getPublishedArticleBySlug(slug)`, and `getPublishedArticleSlugs()`. Each is
+  wrapped in the Next.js 16 `use cache` directive and tagged `ARTICLES_TAG`, so
+  the existing admin `revalidateTag("articles")` calls now actually refresh the
+  public site. Requires `cacheComponents: true` in the consumer; the directive
+  is isolated to this entry point so the rest of the package doesn't force it.
+- **Server-side search + pagination** on the articles list (`?q=` over
+  title/slug, `?page=`) and pagination on the media gallery (`?page=`). New
+  `countArticles` / `countMedia` helpers and `limit`/`offset` params on
+  `listArticles` / `listMedia` stop the list screens from loading every row.
+- `escapeLike` helper so search input is matched literally (no LIKE-wildcard
+  injection).
+
+### Changed
+- Admin article actions reference the shared `ARTICLES_TAG` constant instead of a
+  hardcoded string.
+
 ## [0.4.1] - 2026-06-09
 
 ### Fixed
@@ -62,6 +83,7 @@ A large reliability, security, and DX release covering 22 findings.
 Initial public iteration of the admin-kit core (auth, media, users, editor,
 admin shell).
 
+[0.5.0]: https://github.com/Blawness/admin-kit/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/Blawness/admin-kit/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/Blawness/admin-kit/compare/v0.2.1...v0.4.0
 [0.3.0]: https://github.com/Blawness/admin-kit/releases/tag/v0.3.0

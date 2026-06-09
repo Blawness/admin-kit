@@ -1,4 +1,5 @@
-import { listMedia } from "../../lib/admin/media";
+import Link from "next/link";
+import { listMedia, countMedia } from "../../lib/admin/media";
 import { requireUser } from "../../lib/auth-helpers";
 import { ConfirmDelete } from "../../components/confirm-delete";
 import { GalleryUploader } from "./uploader";
@@ -6,23 +7,31 @@ import { Trash2, ImageOff, AlertCircle } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
+const PAGE_SIZE = 24;
+
 export default async function MediaLibraryScreen({
   deleteAction,
   searchParams,
 }: {
   deleteAction: (fd: FormData) => Promise<void>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; page?: string }>;
 }) {
   await requireUser();
-  const items = await listMedia();
-  const { error } = await searchParams;
+  const { error, page: rawPage } = await searchParams;
+
+  const total = await countMedia();
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const page = Math.min(Math.max(1, Number(rawPage) || 1), pageCount);
+  const items = await listMedia({ limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE });
+
+  const pageHref = (p: number) => (p > 1 ? `/admin/media?page=${p}` : "/admin/media");
 
   return (
     <div className="max-w-5xl">
       <div className="mb-6">
         <h1 className="font-heading text-2xl font-bold text-navy-900">Galeri</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {items.length} gambar tersimpan
+          {total} gambar tersimpan
         </p>
       </div>
 
@@ -76,6 +85,40 @@ export default async function MediaLibraryScreen({
             </div>
           ))}
         </div>
+      )}
+
+      {pageCount > 1 && (
+        <nav className="mt-4 flex items-center justify-between" aria-label="Navigasi halaman">
+          {page > 1 ? (
+            <Link
+              href={pageHref(page - 1)}
+              rel="prev"
+              className="rounded-md border border-navy-200 px-3 py-1.5 text-xs font-medium text-navy-700 transition-colors hover:bg-navy-50"
+            >
+              ← Sebelumnya
+            </Link>
+          ) : (
+            <span className="rounded-md border border-navy-100 px-3 py-1.5 text-xs font-medium text-navy-300">
+              ← Sebelumnya
+            </span>
+          )}
+          <span className="text-xs text-muted-foreground">
+            Halaman {page} dari {pageCount}
+          </span>
+          {page < pageCount ? (
+            <Link
+              href={pageHref(page + 1)}
+              rel="next"
+              className="rounded-md border border-navy-200 px-3 py-1.5 text-xs font-medium text-navy-700 transition-colors hover:bg-navy-50"
+            >
+              Berikutnya →
+            </Link>
+          ) : (
+            <span className="rounded-md border border-navy-100 px-3 py-1.5 text-xs font-medium text-navy-300">
+              Berikutnya →
+            </span>
+          )}
+        </nav>
       )}
     </div>
   );
