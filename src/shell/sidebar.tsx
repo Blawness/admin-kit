@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { LogOut, User } from "lucide-react";
 import type { ReactNode } from "react";
 import { signOutAction } from "./actions";
 
@@ -57,7 +57,21 @@ export function AdminSidebar({ role, navItems, logoSrc = "/logo.png", brandName 
           })}
       </nav>
 
-      <div className="border-t border-white/5 p-3">
+      <div className="border-t border-white/5 p-3 space-y-1">
+        <Link
+          href="/admin/profile"
+          className={`relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
+            pathname === "/admin/profile"
+              ? "bg-white/10 font-medium text-white"
+              : "text-navy-200 hover:bg-white/5 hover:text-white"
+          }`}
+        >
+          {pathname === "/admin/profile" && (
+            <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-gold-400" />
+          )}
+          <User className="h-4 w-4 shrink-0" />
+          Profil
+        </Link>
         <form action={signOutAction}>
           <button
             type="submit"

@@ -68,6 +68,10 @@
       "types": "./dist/screens/dashboard/page.d.ts",
       "default": "./dist/screens/dashboard/page.js"
     },
+    "./screens/profile": {
+      "types": "./dist/screens/profile/page.d.ts",
+      "default": "./dist/screens/profile/page.js"
+    },
     "./screens/login": {
       "types": "./dist/screens/login/page.d.ts",
       "default": "./dist/screens/login/page.js"

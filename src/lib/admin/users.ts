@@ -44,6 +44,10 @@ export async function createUser(email: string, name: string, password: string, 
   return row;
 }
 
+export async function updateUserName(id: number, name: string) {
+  await db.update(users).set({ name }).where(eq(users.id, id));
+}
+
 export async function updateUserPassword(id: number, password: string) {
   const passwordHash = await hash(password, 12);
   await db.update(users).set({ passwordHash }).where(eq(users.id, id));
