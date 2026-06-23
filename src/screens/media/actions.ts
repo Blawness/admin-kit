@@ -6,9 +6,10 @@ import { uploadImage } from "../../lib/r2";
 import { db } from "../../db/index";
 import { media } from "../../db/schema";
 import { OK_IMAGE_TYPES, MAX_IMAGE_BYTES } from "../../lib/upload-constants";
+import { logAudit } from "../../lib/audit";
 
 export async function uploadImageAction(formData: FormData): Promise<{ url?: string; error?: string }> {
-  await requireUser();
+  const session = await requireUser();
   const file = formData.get("file");
   if (!(file instanceof File)) return { error: "Tidak ada berkas." };
   if (!OK_IMAGE_TYPES.includes(file.type)) return { error: "Format gambar tidak didukung." };
@@ -31,7 +32,15 @@ export async function uploadImageAction(formData: FormData): Promise<{ url?: str
     return { error: "Gambar gagal diproses. Pastikan berkas benar-benar gambar." };
   }
 
-  await db.insert(media).values({ url, altText: file.name, album });
+  const [row] = await db.insert(media).values({ url, altText: file.name, album }).returning({ id: media.id });
+  logAudit({
+    actorId: Number(session.user.id),
+    action: "media.upload",
+    entityType: "media",
+    entityId: row.id,
+    metadata: { album, fileName: file.name },
+  }).catch(() => {});
+
   revalidatePath("/admin/media");
   return { url };
 }

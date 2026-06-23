@@ -40,7 +40,8 @@ export type UserRole = "admin" | "editor";
 
 export async function createUser(email: string, name: string, password: string, role: UserRole) {
   const passwordHash = await hash(password, 12);
-  await db.insert(users).values({ email, name, passwordHash, role });
+  const [row] = await db.insert(users).values({ email, name, passwordHash, role }).returning({ id: users.id });
+  return row;
 }
 
 export async function updateUserPassword(id: number, password: string) {

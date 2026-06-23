@@ -15,6 +15,20 @@
       "when": 1781000756373,
       "tag": "0001_spotty_salo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782160000000,
+      "tag": "0002_rate_limit",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1782161000000,
+      "tag": "0003_audit_log",
+      "breakpoints": true
     }
   ]
 }

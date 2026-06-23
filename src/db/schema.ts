@@ -6,6 +6,7 @@ import {
   integer,
   primaryKey,
   index,
+  jsonb,
 } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
@@ -63,6 +64,30 @@ export const articles = pgTable(
     index("articles_created_at_idx").on(t.createdAt),
   ]
 );
+
+export const auditLogs = pgTable("audit_logs", {
+  id: serial("id").primaryKey(),
+  actorId: integer("actor_id").notNull().references(() => users.id),
+  action: text("action").notNull(),
+  entityType: text("entity_type").notNull(),
+  entityId: integer("entity_id"),
+  summary: text("summary"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (t) => [
+  index("audit_logs_actor_id_idx").on(t.actorId),
+  index("audit_logs_action_idx").on(t.action),
+  index("audit_logs_entity_type_id_idx").on(t.entityType, t.entityId),
+  index("audit_logs_created_at_idx").on(t.createdAt),
+]);
+
+export const loginAttempts = pgTable("login_attempts", {
+  id: serial("id").primaryKey(),
+  identifier: text("identifier").notNull(),
+  attemptedAt: timestamp("attempted_at").defaultNow().notNull(),
+}, (t) => [
+  index("login_attempts_identifier_attempted_at_idx").on(t.identifier, t.attemptedAt),
+]);
 
 export const articleTags = pgTable(
   "article_tags",

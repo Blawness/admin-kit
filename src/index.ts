@@ -3,6 +3,8 @@ export { slugify } from "./lib/slug";
 export { sanitizeHtml } from "./lib/sanitize";
 export * from "./lib/db-errors";
 export * from "./lib/r2";
+export * from "./lib/rate-limit";
+export * from "./lib/audit";
 export * from "./db/schema";
 export { db } from "./db/index";
 

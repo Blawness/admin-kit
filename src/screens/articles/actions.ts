@@ -15,6 +15,7 @@ import {
 import { sanitizeHtml } from "../../lib/sanitize";
 import { isUniqueViolation } from "../../lib/db-errors";
 import { ARTICLES_TAG } from "../../lib/cache-tags";
+import { logAudit } from "../../lib/audit";
 
 const articleSchema = z.object({
   title: z.string().min(3, "Judul minimal 3 karakter"),
@@ -84,6 +85,12 @@ export async function createArticleAction(fd: FormData) {
       Number(session.user.id)
     );
     articleId = article.id;
+    logAudit({
+      actorId: Number(session.user.id),
+      action: "article.create",
+      entityType: "article",
+      entityId: articleId,
+    }).catch(() => {});
   } catch (e) {
     const msg = isUniqueViolation(e) ? "Slug sudah digunakan." : "Gagal membuat artikel.";
     redirect(`/admin/articles/new?error=${encodeURIComponent(msg)}`);
@@ -96,6 +103,12 @@ export async function createArticleAction(fd: FormData) {
   if (intent === "review") {
     try {
       await submitForReview(articleId, Number(session.user.id));
+      logAudit({
+        actorId: Number(session.user.id),
+        action: "article.submit",
+        entityType: "article",
+        entityId: articleId,
+      }).catch(() => {});
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Gagal mengajukan review.";
       redirect(`/admin/articles/edit?id=${articleId}&error=${encodeURIComponent(msg)}`);
@@ -132,6 +145,12 @@ export async function updateArticleAction(fd: FormData) {
       { ...rest, content: sanitized, categoryId: parseCategoryId(fd), tagIds: parseTagIds(fd) },
       { userId: Number(session.user.id), isAdmin: session.user.role === "admin" }
     );
+    logAudit({
+      actorId: Number(session.user.id),
+      action: "article.update",
+      entityType: "article",
+      entityId: id,
+    }).catch(() => {});
   } catch (e) {
     const msg = isUniqueViolation(e)
       ? "Slug sudah digunakan."
@@ -147,6 +166,12 @@ export async function updateArticleAction(fd: FormData) {
   if (intent === "review") {
     try {
       await submitForReview(id, Number(session.user.id));
+      logAudit({
+        actorId: Number(session.user.id),
+        action: "article.submit",
+        entityType: "article",
+        entityId: id,
+      }).catch(() => {});
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Gagal mengajukan review.";
       redirect(`/admin/articles/edit?id=${id}&error=${encodeURIComponent(msg)}`);
@@ -157,11 +182,17 @@ export async function updateArticleAction(fd: FormData) {
 }
 
 export async function publishArticleAction(fd: FormData) {
-  await requireAdmin();
+  const session = await requireAdmin();
   const id = Number(fd.get("id"));
   if (!id || isNaN(id)) redirect("/admin/articles");
   try {
     await publishArticle(id);
+    logAudit({
+      actorId: Number(session.user.id),
+      action: "article.publish",
+      entityType: "article",
+      entityId: id,
+    }).catch(() => {});
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Gagal mempublikasi artikel.";
     redirect(`/admin/articles?error=${encodeURIComponent(msg)}`);
@@ -172,11 +203,17 @@ export async function publishArticleAction(fd: FormData) {
 }
 
 export async function rejectArticleAction(fd: FormData) {
-  await requireAdmin();
+  const session = await requireAdmin();
   const id = Number(fd.get("id"));
   if (!id || isNaN(id)) redirect("/admin/articles");
   try {
     await rejectArticle(id);
+    logAudit({
+      actorId: Number(session.user.id),
+      action: "article.reject",
+      entityType: "article",
+      entityId: id,
+    }).catch(() => {});
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Gagal menolak artikel.";
     redirect(`/admin/articles?error=${encodeURIComponent(msg)}`);
@@ -187,10 +224,16 @@ export async function rejectArticleAction(fd: FormData) {
 }
 
 export async function deleteArticleAction(fd: FormData) {
-  await requireAdmin();
+  const session = await requireAdmin();
   const id = Number(fd.get("id"));
   if (!id || isNaN(id)) redirect("/admin/articles");
   await deleteArticle(id);
+  logAudit({
+    actorId: Number(session.user.id),
+    action: "article.delete",
+    entityType: "article",
+    entityId: id,
+  }).catch(() => {});
   // Revalidasi cache publik agar artikel yang dihapus hilang dari konsumen.
   revalidateTag(ARTICLES_TAG, "max");
   redirect("/admin/articles");

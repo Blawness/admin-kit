@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { db } from "../db/index";
 import { users } from "../db/schema";
 import { authConfig } from "./config";
+import { isRateLimited } from "../lib/rate-limit";
 
 const credentialsSchema = z.object({
   email: z.string().email(),
@@ -21,6 +22,9 @@ const _result: NextAuthResult = NextAuth({
         const parsed = credentialsSchema.safeParse(raw);
         if (!parsed.success) return null;
         const { email, password } = parsed.data;
+
+        // Rate-limit check: skip expensive bcrypt for blocked identifiers
+        if (await isRateLimited(email)) return null;
 
         const [user] = await db
           .select()

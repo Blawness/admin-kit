@@ -10,11 +10,12 @@ import {
   createTag,
   deleteTag,
 } from "../../lib/admin/categories";
+import { logAudit } from "../../lib/audit";
 
 const nameSchema = z.string().min(1, "Nama tidak boleh kosong").max(100);
 
 export async function createCategoryAction(fd: FormData) {
-  await requireAdmin();
+  const session = await requireAdmin();
   const name = String(fd.get("name") ?? "");
   const result = nameSchema.safeParse(fd.get("name"));
   if (!result.success) {
@@ -24,7 +25,14 @@ export async function createCategoryAction(fd: FormData) {
     );
   }
   try {
-    await createCategory(result.data);
+    const row = await createCategory(result.data);
+    logAudit({
+      actorId: Number(session.user.id),
+      action: "category.create",
+      entityType: "category",
+      entityId: row.id,
+      metadata: { name: result.data },
+    }).catch(() => {});
   } catch (e) {
     const msg = isUniqueViolation(e) ? "Kategori sudah ada." : "Terjadi kesalahan, coba lagi.";
     redirect(
@@ -35,15 +43,21 @@ export async function createCategoryAction(fd: FormData) {
 }
 
 export async function deleteCategoryAction(fd: FormData) {
-  await requireAdmin();
+  const session = await requireAdmin();
   const id = Number(fd.get("id"));
   if (!id || isNaN(id)) redirect("/admin/categories");
   await deleteCategory(id);
+  logAudit({
+    actorId: Number(session.user.id),
+    action: "category.delete",
+    entityType: "category",
+    entityId: id,
+  }).catch(() => {});
   redirect("/admin/categories");
 }
 
 export async function createTagAction(fd: FormData) {
-  await requireAdmin();
+  const session = await requireAdmin();
   const name = String(fd.get("name") ?? "");
   const result = nameSchema.safeParse(fd.get("name"));
   if (!result.success) {
@@ -52,7 +66,14 @@ export async function createTagAction(fd: FormData) {
     );
   }
   try {
-    await createTag(result.data);
+    const row = await createTag(result.data);
+    logAudit({
+      actorId: Number(session.user.id),
+      action: "tag.create",
+      entityType: "tag",
+      entityId: row.id,
+      metadata: { name: result.data },
+    }).catch(() => {});
   } catch (e) {
     const msg = isUniqueViolation(e) ? "Tag sudah ada." : "Terjadi kesalahan, coba lagi.";
     redirect(
@@ -63,9 +84,15 @@ export async function createTagAction(fd: FormData) {
 }
 
 export async function deleteTagAction(fd: FormData) {
-  await requireAdmin();
+  const session = await requireAdmin();
   const id = Number(fd.get("id"));
   if (!id || isNaN(id)) redirect("/admin/categories");
   await deleteTag(id);
+  logAudit({
+    actorId: Number(session.user.id),
+    action: "tag.delete",
+    entityType: "tag",
+    entityId: id,
+  }).catch(() => {});
   redirect("/admin/categories");
 }

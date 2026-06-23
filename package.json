@@ -64,6 +64,10 @@
       "types": "./dist/lib/admin/users.d.ts",
       "default": "./dist/lib/admin/users.js"
     },
+    "./screens/dashboard": {
+      "types": "./dist/screens/dashboard/page.d.ts",
+      "default": "./dist/screens/dashboard/page.js"
+    },
     "./screens/login": {
       "types": "./dist/screens/login/page.d.ts",
       "default": "./dist/screens/login/page.js"

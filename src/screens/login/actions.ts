@@ -1,7 +1,16 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { eq } from "drizzle-orm";
 import { signIn } from "../../auth/index";
+import { db } from "../../db/index";
+import { users } from "../../db/schema";
+import {
+  isRateLimited,
+  recordLoginAttempt,
+  clearRateLimit,
+} from "../../lib/rate-limit";
+import { logAudit } from "../../lib/audit";
 
 export type LoginState = { error?: string };
 
@@ -9,9 +18,19 @@ export async function loginAction(
   _prev: LoginState,
   formData: FormData,
 ): Promise<LoginState> {
+  const email = String(formData.get("email") ?? "").trim();
+
+  // Rate-limit: block before any DB credential check
+  if (email && (await isRateLimited(email))) {
+    return {
+      error:
+        "Terlalu banyak percobaan login. Silakan coba lagi dalam 15 menit.",
+    };
+  }
+
   try {
     const result = await signIn("credentials", {
-      email: formData.get("email"),
+      email,
       password: formData.get("password"),
       redirect: false,
     });
@@ -23,9 +42,26 @@ export async function loginAction(
       result == null ||
       (typeof result === "string" && result.toLowerCase().includes("error"));
     if (failed) {
+      if (email) await recordLoginAttempt(email);
       return { error: "Email atau password salah." };
     }
 
+    // Successful login — clear any previous failed attempts & audit
+    if (email) {
+      await clearRateLimit(email);
+      const [userRow] = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.email, email))
+        .limit(1);
+      if (userRow) {
+        logAudit({
+          actorId: userRow.id,
+          action: "auth.login",
+          entityType: "auth",
+        }).catch(() => {});
+      }
+    }
     redirect("/admin");
   } catch (error) {
     // Catch CredentialsSignin and other auth errors thrown by next-auth
@@ -37,6 +73,7 @@ export async function loginAction(
     ) {
       throw error;
     }
+    if (email) await recordLoginAttempt(email);
     return { error: "Email atau password salah." };
   }
 }
