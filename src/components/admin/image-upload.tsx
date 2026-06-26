@@ -44,6 +44,8 @@ export function ImageUpload({
     }
     const fd = new FormData();
     fd.set("file", file);
+    fd.set("allowedTypes", allowedTypes.join(","));
+    fd.set("maxBytes", String(maxBytes));
     setError(undefined);
     start(async () => {
       const res = await uploadAction(fd);
