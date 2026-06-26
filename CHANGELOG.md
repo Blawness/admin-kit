@@ -4,6 +4,35 @@ All notable changes to `@blawness/admin-kit` are documented here. This project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and the
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
+## [0.7.0] - 2026-06-26
+
+### Added
+- **Flexible file upload.** `ImageUpload` gains optional `accept`, `allowedTypes`,
+  and `maxBytes` props (defaults unchanged). Non-image files (PDF, documents,
+  etc.) are now supported — `uploadImageAction` auto-detects the MIME type and
+  uploads non-images raw via the new `uploadFile()` R2 helper (which accepts
+  `skipProcessing: true`), while images continue through the sharp pipeline.
+  `uploadImage()` now delegates to `uploadFile()` internally.
+- **`requireUserId()` helper** (`@blawness/admin-kit/auth-helpers`) returns the
+  authenticated user's ID as a `number` (matching DB `serial` columns), avoiding
+  `Number(session.user.id)` boilerplate in every mutation.
+
+## [0.6.0] - 2026-06-26
+
+### Added
+- Self-service profile editing screen (`/admin/profile`) for name, email, and
+  password changes.
+- Media gallery: search by filename (`?q=`) and filter by album
+  (`?album=`).
+- Rate limiting on login (`loginRateLimit`) with audit logging
+  (`logAudit` / `logLoginFailure`).
+- Admin dashboard with live stats (user count, media count, recent uploads).
+- Local demo consumer app under `examples/` (pnpm workspace).
+
+### Fixed
+- Login failure detection hardened against null/undefined `authorized` values.
+- Media pagination and search now compose properly with album filtering.
+
 ## [0.5.0] - 2026-06-09
 
 ### Added
@@ -96,6 +125,8 @@ A large reliability, security, and DX release covering 22 findings.
 Initial public iteration of the admin-kit core (auth, media, users, editor,
 admin shell).
 
+[0.7.0]: https://github.com/Blawness/admin-kit/compare/v0.6.0...v0.7.0
+[0.6.0]: https://github.com/Blawness/admin-kit/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Blawness/admin-kit/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/Blawness/admin-kit/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/Blawness/admin-kit/compare/v0.2.1...v0.4.0

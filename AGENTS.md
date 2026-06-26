@@ -5,20 +5,38 @@
 This repository is a reusable Next.js admin kit package. Source code lives in `src/`; compiled JavaScript and declaration files are emitted to `dist/` by TypeScript. Public entry points are controlled by `package.json` `exports`, so update that map when adding new consumable modules.
 
 - `src/components/`: shared React components, including `ui/` primitives and admin-specific widgets.
-- `src/screens/`: reusable admin screens and server actions for login, media, and users.
+- `src/screens/`: reusable admin screens and server actions for login, media, users, articles, categories.
 - `src/shell/`: admin layout, sidebar, and shell actions.
 - `src/lib/`: shared helpers, R2 storage code, sanitization, slugs, and admin data functions.
 - `src/auth/`, `src/db/`, `src/types/`: NextAuth, Drizzle schema/client, and type augmentation.
+- `test/`: Vitest unit tests (colocated test files are also acceptable under `src/`).
+
+The workspace includes a demo consumer app under `examples/demo` for integration testing.
 
 ## Build, Test, and Development Commands
 
 Use pnpm for dependency management.
 
-- `pnpm build`: compiles `src/` into `dist/` with declarations.
-- `pnpm typecheck`: runs TypeScript in `--noEmit` mode.
-- `pnpm prepare`: runs the same TypeScript build used when this package is installed from Git.
+| Command | Purpose |
+|---------|---------|
+| `pnpm typecheck` | TypeScript `--noEmit` check |
+| `pnpm lint` | ESLint (flat config in `eslint.config.mjs`) |
+| `pnpm test` | Vitest (`test/**/*.test.ts`) |
+| `pnpm build` | Compile `src/` → `dist/` with declarations |
+| `pnpm prepare` | Same build, runs on `pnpm install` from Git |
 
-There is no local dev server for this package. Validate integration in a consuming Next.js app with `transpilePackages: ["@blawness/admin-kit"]`.
+**Pre-commit verification order (must pass all):**
+```
+pnpm typecheck && pnpm lint && pnpm test && pnpm build
+```
+
+This matches the CI pipeline (`.github/workflows/ci.yml`).
+
+There is no local dev server for this package. Validate integration in a consuming Next.js app with `transpilePackages: ["@blawness/admin-kit"]` (the `examples/demo` app is suitable).
+
+### Database commands (Neon Postgres)
+- `pnpm db:generate` — generate migrations from schema changes
+- `pnpm db:migrate` — apply migrations
 
 ## Coding Style & Naming Conventions
 
@@ -26,16 +44,20 @@ Write TypeScript with `strict` enabled and React JSX via `react-jsx`. Follow the
 
 Keep package APIs explicit. When adding a public module, add its export to `package.json` and ensure `pnpm build` emits the matching `.js` and `.d.ts` files.
 
-## Testing Guidelines
+## Pre-Release Checklist
 
-No test framework is currently configured. For now, treat `pnpm typecheck` and `pnpm build` as required checks before committing. When adding tests, prefer colocated `*.test.ts` or `*.test.tsx` files under `src/` and add a `pnpm test` script in the same change.
+Before bumping the version or tagging a release:
 
-## Commit & Pull Request Guidelines
+1. All checks pass: `pnpm typecheck && pnpm lint && pnpm test && pnpm build`
+2. Update `CHANGELOG.md` following [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format with the new version heading, categorized entries, and a comparison link at the bottom.
+3. Bump `version` in `package.json` (Semantic Versioning).
+4. Verify `package.json` `exports` map covers any new modules.
+5. Verify `.npmignore` excludes build artifacts, lockfiles, and config files that shouldn't ship (source files ARE shipped intentionally — see `"files": ["dist", "src"]`).
 
-Recent history uses Conventional Commit prefixes: `feat:`, `fix:`, and `chore:`. Keep messages short and imperative, for example `fix: enforce auth in media screen`.
+## Commit Guidelines
 
-Pull requests should include a brief description, linked issue when applicable, verification commands run, and screenshots or screen recordings for UI-facing changes. Note any consumer setup changes, especially new peer dependencies, environment variables, or exported entry points.
+Use Conventional Commit prefixes: `feat:`, `fix:`, `chore:`. Keep messages short and imperative.
 
 ## Security & Configuration Tips
 
-Do not commit credentials. Runtime consumers must provide required values such as `DATABASE_URL` and R2-related environment variables. Keep auth, storage, and database changes conservative because this package is reused across admin panels.
+Do not commit credentials. Runtime consumers must provide required values such as `DATABASE_URL` and R2-related environment variables (`R2_BUCKET`, `R2_PUBLIC_URL`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ENDPOINT`). Keep auth, storage, and database changes conservative because this package is reused across admin panels.

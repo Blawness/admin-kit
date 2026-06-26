@@ -43,6 +43,74 @@ export function r2(): S3Client {
 }
 
 /**
+ * Unggah buffer sembarang ke R2 tanpa pemrosesan gambar (lewatkan sharp).
+ * Gunakan ini untuk PDF, dokumen, atau berkas non-gambar lainnya.
+ */
+export async function uploadFile(
+  input: Buffer,
+  /** key/nama objek di bucket, tanpa ekstensi — mis. "dokumen/laporan-2025" */
+  keyBase: string,
+  opts?: { contentType?: string; skipProcessing?: boolean }
+): Promise<{ url: string; key: string; size: number }> {
+  const skip = opts?.skipProcessing === true;
+  let body: Buffer;
+  let ext: string;
+  let contentType: string;
+
+  if (skip) {
+    body = input;
+    ext = "";
+    contentType = opts?.contentType ?? "application/octet-stream";
+  } else {
+    const meta = await sharp(input).metadata();
+    const isAnimated = (meta.pages ?? 1) > 1;
+    const hasAlpha = meta.hasAlpha === true;
+    const isPngOrWebp = meta.format === "png" || meta.format === "webp";
+
+    if (isAnimated) {
+      body = await sharp(input, { animated: true }).webp().toBuffer();
+      ext = "webp";
+      contentType = "image/webp";
+    } else if (hasAlpha || isPngOrWebp) {
+      body = await sharp(input)
+        .rotate()
+        .resize({ width: 1600, withoutEnlargement: true })
+        .webp({ quality: 80 })
+        .toBuffer();
+      ext = "webp";
+      contentType = "image/webp";
+    } else {
+      body = await sharp(input)
+        .rotate()
+        .resize({ width: 1600, withoutEnlargement: true })
+        .jpeg({ quality: 80, mozjpeg: true })
+        .toBuffer();
+      ext = "jpg";
+      contentType = "image/jpeg";
+    }
+  }
+
+  const key = ext ? `${keyBase.replace(/^\/+/, "")}.${ext}` : keyBase.replace(/^\/+/, "");
+
+  await getR2().send(
+    new PutObjectCommand({
+      Bucket: R2_BUCKET(),
+      Key: key,
+      Body: body,
+      ContentType: contentType,
+      CacheControl: "public, max-age=31536000, immutable",
+    })
+  );
+
+  const publicUrl = R2_PUBLIC_URL();
+  if (!publicUrl) {
+    throw new Error("R2_PUBLIC_URL belum di-set — tidak bisa menyusun URL publik.");
+  }
+
+  return { url: `${publicUrl}/${key}`, key, size: body.length };
+}
+
+/**
  * Resize + kompres gambar lalu unggah ke R2.
  * Format input dipertahankan secara cerdas: gambar dengan alpha channel atau
  * PNG/WebP diekspor sebagai WebP (q80) agar transparansi tetap utuh, GIF
@@ -55,58 +123,7 @@ export async function uploadImage(
   /** key/nama objek di bucket, tanpa ekstensi — mis. "berita/slug-artikel" */
   keyBase: string
 ): Promise<{ url: string; key: string; size: number }> {
-  const meta = await sharp(input).metadata();
-  const isAnimated = (meta.pages ?? 1) > 1;
-  const hasAlpha = meta.hasAlpha === true;
-  const isPngOrWebp = meta.format === "png" || meta.format === "webp";
-
-  let optimized: Buffer;
-  let ext: string;
-  let contentType: string;
-
-  if (isAnimated) {
-    // GIF (atau lainnya) beranimasi → WebP beranimasi agar animasi terjaga.
-    optimized = await sharp(input, { animated: true }).webp().toBuffer();
-    ext = "webp";
-    contentType = "image/webp";
-  } else if (hasAlpha || isPngOrWebp) {
-    // Punya transparansi / PNG / WebP → WebP agar alpha channel terjaga.
-    optimized = await sharp(input)
-      .rotate() // hormati orientasi EXIF
-      .resize({ width: 1600, withoutEnlargement: true })
-      .webp({ quality: 80 })
-      .toBuffer();
-    ext = "webp";
-    contentType = "image/webp";
-  } else {
-    // Gambar opak biasa → JPEG q80.
-    optimized = await sharp(input)
-      .rotate() // hormati orientasi EXIF
-      .resize({ width: 1600, withoutEnlargement: true })
-      .jpeg({ quality: 80, mozjpeg: true })
-      .toBuffer();
-    ext = "jpg";
-    contentType = "image/jpeg";
-  }
-
-  const key = `${keyBase.replace(/^\/+/, "")}.${ext}`;
-
-  await getR2().send(
-    new PutObjectCommand({
-      Bucket: R2_BUCKET(),
-      Key: key,
-      Body: optimized,
-      ContentType: contentType,
-      CacheControl: "public, max-age=31536000, immutable",
-    })
-  );
-
-  const publicUrl = R2_PUBLIC_URL();
-  if (!publicUrl) {
-    throw new Error("R2_PUBLIC_URL belum di-set — tidak bisa menyusun URL publik.");
-  }
-
-  return { url: `${publicUrl}/${key}`, key, size: optimized.length };
+  return uploadFile(input, keyBase);
 }
 
 /**

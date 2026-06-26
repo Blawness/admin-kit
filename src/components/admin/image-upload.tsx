@@ -14,25 +14,32 @@ export function ImageUpload({
   onChange,
   label = "gambar",
   uploadAction,
+  accept = "image/*",
+  allowedTypes = OK_IMAGE_TYPES,
+  maxBytes = MAX_IMAGE_BYTES,
 }: {
   value?: string | null;
   onChange: (url: string) => void;
   label?: string;
   uploadAction: (formData: FormData) => Promise<{ url?: string; error?: string }>;
+  accept?: string;
+  allowedTypes?: string[];
+  maxBytes?: number;
 }) {
   const [pending, start] = useTransition();
   const [error, setError] = useState<string>();
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const maxMb = Math.round(maxBytes / (1024 * 1024));
 
   function upload(file: File | undefined) {
     if (!file) return;
-    if (!OK_IMAGE_TYPES.includes(file.type)) {
-      setError("Format tidak didukung — gunakan JPG, PNG, WebP, atau GIF.");
+    if (allowedTypes.length > 0 && !allowedTypes.includes(file.type)) {
+      setError("Format tidak didukung.");
       return;
     }
-    if (file.size > MAX_IMAGE_BYTES) {
-      setError("Ukuran gambar maksimal 8MB.");
+    if (file.size > maxBytes) {
+      setError(`Ukuran berkas maksimal ${maxMb}MB.`);
       return;
     }
     const fd = new FormData();
@@ -98,7 +105,7 @@ export function ImageUpload({
                 {pending ? "Mengunggah…" : `Klik untuk unggah ${label}`}
               </span>
               <span className="mt-0.5 block text-xs text-muted-foreground">
-                atau seret &amp; lepas di sini · JPG, PNG, WebP, GIF (maks 8MB)
+                atau seret &amp; lepas di sini · maks {maxMb}MB
               </span>
             </span>
           </>
@@ -108,7 +115,7 @@ export function ImageUpload({
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept={accept}
         className="hidden"
         onChange={(e) => upload(e.target.files?.[0])}
         disabled={pending}
