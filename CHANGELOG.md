@@ -4,6 +4,12 @@ All notable changes to `@blawness/admin-kit` are documented here. This project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and the
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
+## [0.7.1] - 2026-06-26
+
+### Fixed
+- `CHANGELOG.md` now included in the npm tarball so consumers can read version
+  history from the package itself.
+
 ## [0.7.0] - 2026-06-26
 
 ### Added
@@ -125,6 +131,7 @@ A large reliability, security, and DX release covering 22 findings.
 Initial public iteration of the admin-kit core (auth, media, users, editor,
 admin shell).
 
+[0.7.1]: https://github.com/Blawness/admin-kit/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/Blawness/admin-kit/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/Blawness/admin-kit/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Blawness/admin-kit/compare/v0.4.1...v0.5.0
