@@ -95,7 +95,7 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
   );
 }
 
-export function AdminSidebar({ role, navItems, logoSrc = "/logo.png", brandName = "Admin" }: { role: string; navItems: NavItem[]; logoSrc?: string; brandName?: string }) {
+export function AdminSidebar({ navItems, logoSrc = "/logo.png", brandName = "Admin" }: { navItems: NavItem[]; logoSrc?: string; brandName?: string }) {
   const pathname = usePathname();
   return (
     <aside className="flex w-60 shrink-0 flex-col bg-gradient-to-b from-navy-900 to-navy-950 text-navy-100">

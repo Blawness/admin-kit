@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { defineRbac } from "../src/rbac/define-rbac.ts";
 import { presets } from "../src/rbac/presets.ts";
 import { getActiveRbac } from "../src/rbac/registry.ts";
+import type { NavItem } from "../src/shell/sidebar.ts";
 
 describe("defineRbac", () => {
   it("registers the active runtime", () => {
@@ -28,12 +29,12 @@ describe("defineRbac", () => {
       fallbackRole: "editor",
       protectedPermission: "users.delete",
     });
-    const nav = [
+    const nav: NavItem[] = [
       { label: "Articles", href: "/a", requires: "articles.read" },
       { label: "Users", href: "/u", requires: "users.read" },
       { label: "Home", href: "/" },
     ];
-    const out = rbac.filterNav(nav as any, "editor");
+    const out = rbac.filterNav(nav, "editor");
     expect(out.map((i) => i.label)).toEqual(["Articles", "Home"]);
   });
   it("filterNav recurses into children and drops empty groups", () => {
@@ -42,10 +43,10 @@ describe("defineRbac", () => {
       fallbackRole: "editor",
       protectedPermission: "users.delete",
     });
-    const nav = [
+    const nav: NavItem[] = [
       { label: "Manage", children: [{ label: "Users", href: "/u", requires: "users.read" }] },
     ];
-    expect(rbac.filterNav(nav as any, "editor")).toEqual([]);
+    expect(rbac.filterNav(nav, "editor")).toEqual([]);
   });
   it("exposes the produced authConfig", () => {
     const rbac = defineRbac({ roles: { admin: ["*"] }, fallbackRole: "admin", protectedPermission: "users.delete" });

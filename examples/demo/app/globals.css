@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
-/* Scan the linked package so Tailwind generates the utility classes it uses. */
+/* Scan the linked package so Tailwind generates the utility classes it uses.
+   The node_modules entry is a workspace symlink to the repo root and Tailwind
+   v4 won't traverse it, so point @source straight at the real source tree. */
+@source "../../../src/**/*.{ts,tsx}";
 @source "../../node_modules/@blawness/admin-kit/dist/**/*.{js,mjs}";
 @source "../../node_modules/@blawness/admin-kit/src/**/*.{ts,tsx}";
 
