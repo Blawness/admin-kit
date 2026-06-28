@@ -18,7 +18,7 @@ export async function AdminLayout({
 
   // The only unauthenticated route reachable here is /admin/login: the proxy
   // redirects every other /admin/* to login, and each admin page additionally
-  // calls requireUser()/requireAdmin() before touching data.
+  // calls requireUser()/requirePermission() before touching data.
   // So rendering bare children here (no shell) cannot leak protected content.
   if (!session?.user) {
     return <>{children}</>;

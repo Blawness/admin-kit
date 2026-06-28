@@ -1,4 +1,5 @@
-import { requireAdmin } from "../../lib/auth-helpers";
+import { requirePermission } from "../../lib/auth-helpers";
+import { getActiveRbac } from "../../rbac/registry";
 import { listUsers } from "../../lib/admin/users";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -19,7 +20,7 @@ export default async function UsersScreen({
     role?: string;
   }>;
 }) {
-  const session = await requireAdmin();
+  const session = await requirePermission("users.read");
   const rows = await listUsers();
   const { error, email, name, role } = await searchParams;
 
@@ -46,9 +47,10 @@ export default async function UsersScreen({
         <Input name="name" placeholder="Nama" required defaultValue={name} />
         <Input name="email" type="email" placeholder="Email" required defaultValue={email} />
         <Input name="password" type="password" placeholder="Password (min 8)" required />
-        <select name="role" className={selectClass} defaultValue={role === "admin" ? "admin" : "editor"}>
-          <option value="editor">Editor</option>
-          <option value="admin">Admin</option>
+        <select name="role" className={selectClass} defaultValue={role}>
+          {Object.keys(getActiveRbac().config.roles).map((r) => (
+            <option key={r} value={r}>{r}</option>
+          ))}
         </select>
         <Button type="submit" className="sm:col-span-2">
           <UserPlus className="h-4 w-4" />

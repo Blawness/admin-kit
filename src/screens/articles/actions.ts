@@ -3,7 +3,8 @@
 import { redirect } from "next/navigation";
 import { revalidateTag } from "next/cache";
 import { z } from "zod";
-import { requireUser, requireAdmin } from "../../lib/auth-helpers";
+import { requireUser, requirePermission } from "../../lib/auth-helpers";
+import { getActiveRbac } from "../../rbac/registry";
 import {
   createArticle,
   updateArticle,
@@ -143,7 +144,7 @@ export async function updateArticleAction(fd: FormData) {
     await updateArticle(
       id,
       { ...rest, content: sanitized, categoryId: parseCategoryId(fd), tagIds: parseTagIds(fd) },
-      { userId: Number(session.user.id), isAdmin: session.user.role === "admin" }
+      { userId: Number(session.user.id), isAdmin: getActiveRbac().can(session.user.role, "articles.publish") }
     );
     logAudit({
       actorId: Number(session.user.id),
@@ -182,7 +183,7 @@ export async function updateArticleAction(fd: FormData) {
 }
 
 export async function publishArticleAction(fd: FormData) {
-  const session = await requireAdmin();
+  const session = await requirePermission("articles.publish");
   const id = Number(fd.get("id"));
   if (!id || isNaN(id)) redirect("/admin/articles");
   try {
@@ -203,7 +204,7 @@ export async function publishArticleAction(fd: FormData) {
 }
 
 export async function rejectArticleAction(fd: FormData) {
-  const session = await requireAdmin();
+  const session = await requirePermission("articles.publish");
   const id = Number(fd.get("id"));
   if (!id || isNaN(id)) redirect("/admin/articles");
   try {
@@ -224,7 +225,7 @@ export async function rejectArticleAction(fd: FormData) {
 }
 
 export async function deleteArticleAction(fd: FormData) {
-  const session = await requireAdmin();
+  const session = await requirePermission("articles.delete");
   const id = Number(fd.get("id"));
   if (!id || isNaN(id)) redirect("/admin/articles");
   await deleteArticle(id);
