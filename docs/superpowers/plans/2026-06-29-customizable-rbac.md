@@ -592,6 +592,7 @@ git commit -m "feat(rbac): requirePermission guard, drop requireAdmin"
 ### Task 6: `defineRbac` bundle + barrel + package export
 
 **Files:**
+- Create: `src/rbac/nav.ts` (shared pure nav filter — used by both the bundle and `shell/layout.tsx`)
 - Create: `src/rbac/define-rbac.ts`
 - Create: `src/rbac/index.ts`
 - Modify: `package.json` (add `./rbac` export, bump version)
@@ -674,6 +675,36 @@ Expected: FAIL — cannot find module `../src/rbac/define-rbac.ts`.
 
 - [ ] **Step 3: Write implementation**
 
+First create the shared pure nav filter:
+
+```ts
+// src/rbac/nav.ts
+import type { NavItem } from "../shell/sidebar";
+
+/**
+ * Drop nav items whose `requires` permission is not allowed; recurse into
+ * children and drop groups that become empty. Pure + edge-safe (type-only
+ * NavItem import is erased at compile). Shared by the defineRbac bundle and
+ * the server-side AdminLayout so the logic lives in exactly one place.
+ */
+export function filterNavItems(items: NavItem[], allow: (perm: string) => boolean): NavItem[] {
+  const out: NavItem[] = [];
+  for (const item of items) {
+    if (item.requires && !allow(item.requires)) continue;
+    if (item.children) {
+      const children = filterNavItems(item.children, allow);
+      if (children.length === 0) continue;
+      out.push({ ...item, children });
+    } else {
+      out.push(item);
+    }
+  }
+  return out;
+}
+```
+
+Then the bundle:
+
 ```ts
 // src/rbac/define-rbac.ts
 import type { NextAuthConfig, Session } from "next-auth";
@@ -681,6 +712,7 @@ import type { NavItem } from "../shell/sidebar";
 import { buildAuthConfig } from "../auth/config";
 import { hasPermission, type Permission } from "./permissions";
 import { buildRuntime, setActiveRbac } from "./registry";
+import { filterNavItems } from "./nav";
 
 export type RbacConfig = {
   roles: Record<string, Permission[]>;
@@ -698,21 +730,6 @@ export type RbacBundle = {
   requireUserId: () => Promise<number>;
   requirePermission: (perm: Permission) => Promise<Session>;
 };
-
-function filterNavFor(items: NavItem[], allow: (perm: string) => boolean): NavItem[] {
-  const out: NavItem[] = [];
-  for (const item of items) {
-    if (item.requires && !allow(item.requires)) continue;
-    if (item.children) {
-      const children = filterNavFor(item.children, allow);
-      if (children.length === 0) continue;
-      out.push({ ...item, children });
-    } else {
-      out.push(item);
-    }
-  }
-  return out;
-}
 
 /**
  * Define the consumer's RBAC. Returns an edge-safe bundle AND registers the
@@ -734,7 +751,7 @@ export function defineRbac(config: RbacConfig): RbacBundle {
     authConfig: buildAuthConfig(config.fallbackRole),
     permissionsFor: runtime.permissionsFor,
     can,
-    filterNav: (items, role) => filterNavFor(items, (perm) => can(role, perm)),
+    filterNav: (items, role) => filterNavItems(items, (perm) => can(role, perm)),
     // Node-only guards reached via dynamic import to keep this module edge-safe.
     requireUser: async () => (await import("../lib/auth-helpers")).requireUser(),
     requireUserId: async () => (await import("../lib/auth-helpers")).requireUserId(),
@@ -1113,9 +1130,10 @@ Remove the now-unused `role` parameter from `NavGroup` (lines 20, 24) and its `r
 
 - [ ] **Step 2: Edit `src/shell/layout.tsx`**
 
-Add import:
+Add imports (reuse the shared pure filter from Task 6 — do NOT redefine it here):
 ```ts
 import { getActiveRbac } from "../rbac/registry";
+import { filterNavItems } from "../rbac/nav";
 ```
 Replace line 29 with a filtered nav:
 ```tsx
@@ -1126,23 +1144,7 @@ Replace line 29 with a filtered nav:
     <div className="flex min-h-screen bg-navy-50/60">
       <AdminSidebar role={role} navItems={visibleNav} logoSrc={logoSrc} brandName={brandName} />
 ```
-Add a local `filterNavItems` helper at the bottom of `layout.tsx` (duplicate of the bundle's logic, but layout is server-side and cannot import the edge bundle without pulling client code — keep it local and small):
-```tsx
-function filterNavItems(items: NavItem[], allow: (perm: string) => boolean): NavItem[] {
-  const out: NavItem[] = [];
-  for (const item of items) {
-    if (item.requires && !allow(item.requires)) continue;
-    if (item.children) {
-      const children = filterNavItems(item.children, allow);
-      if (children.length === 0) continue;
-      out.push({ ...item, children });
-    } else {
-      out.push(item);
-    }
-  }
-  return out;
-}
-```
+`src/rbac/nav.ts` is pure (type-only `NavItem` import erased at compile), so importing it into the server `AdminLayout` pulls no client code.
 
 - [ ] **Step 3: Run typecheck**
 
