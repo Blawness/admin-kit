@@ -14,7 +14,7 @@ export const rbac = defineRbac({
 
 ## 2. Wire it
 - `middleware.ts`: `NextAuth(rbac.authConfig)` (replaces importing `@blawness/admin-kit/auth/config`).
-- Admin root layout: add `import "./rbac"` (side effect) so the config registers in the node runtime.
+- Admin root layout: add a side-effect import pointing at your `rbac.ts` (adjust the relative depth to your file, e.g. `import "../../rbac"`) so the config registers in the node runtime. (The demo's layout sits three levels deep and uses `import "../../../rbac"`.)
 
 ## 3. Replace gating in your own code
 - `requireAdmin()` → `requirePermission("<perm>")` from `@blawness/admin-kit/auth-helpers`.
