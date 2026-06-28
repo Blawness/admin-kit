@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import { auth } from "../auth/index";
 import { Toaster } from "sonner";
 import { AdminSidebar, type NavItem } from "./sidebar";
+import { getActiveRbac } from "../rbac/registry";
+import { filterNavItems } from "../rbac/nav";
 
 export async function AdminLayout({
   navItems,
@@ -24,9 +26,12 @@ export async function AdminLayout({
     return <>{children}</>;
   }
 
+  const role = session.user.role;
+  const rbac = getActiveRbac();
+  const visibleNav = filterNavItems(navItems, (perm) => rbac.can(role, perm));
   return (
     <div className="flex min-h-screen bg-navy-50/60">
-      <AdminSidebar role={session.user.role} navItems={navItems} logoSrc={logoSrc} brandName={brandName} />
+      <AdminSidebar role={role} navItems={visibleNav} logoSrc={logoSrc} brandName={brandName} />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-navy-100 bg-white/80 px-6 backdrop-blur-sm">
           <span className="text-sm font-medium text-navy-500">Panel Admin</span>
