@@ -7,6 +7,7 @@ describe("presets", () => {
   });
   it("adminEditor editor cannot manage users", () => {
     expect(presets.adminEditor.editor).not.toContain("users.delete");
+    expect(presets.adminEditor.editor.every((p) => !p.startsWith("users."))).toBe(true);
     expect(presets.adminEditor.editor.some((p) => p.startsWith("articles"))).toBe(true);
   });
   it("fourTier has four roles", () => {

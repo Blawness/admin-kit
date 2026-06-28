@@ -23,7 +23,7 @@ export const presets = {
   /** Replicates the legacy 2-role behavior. */
   adminEditor: {
     admin: ["*"] as Permission[],
-    editor: [...contentEditor, "profile.edit"] as Permission[],
+    editor: contentEditor,
   },
   /** Common four-tier hierarchy. */
   fourTier: {
