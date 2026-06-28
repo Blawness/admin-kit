@@ -1,7 +1,9 @@
 import { db } from "../../db/index";
 import { users } from "../../db/schema";
-import { asc, eq, sql } from "drizzle-orm";
+import { asc, eq, sql, inArray } from "drizzle-orm";
 import { hash } from "bcryptjs";
+import { getActiveRbac } from "../../rbac/registry";
+import { hasPermission } from "../../rbac/permissions";
 
 /**
  * Dilempar saat sebuah operasi akan menghapus/menurunkan admin terakhir, yang
@@ -20,12 +22,23 @@ export function isLastAdminError(e: unknown): e is LastAdminError {
   return e instanceof LastAdminError;
 }
 
-// Jumlah admin di dalam transaksi berjalan — dipakai untuk guard lockout.
-async function countAdmins(tx: Parameters<Parameters<typeof db.transaction>[0]>[0]): Promise<number> {
+/** Roles whose permission set covers `perm`. Pure; reads the active config. */
+export function rolesGranting(perm: string): string[] {
+  const { config } = getActiveRbac();
+  return Object.keys(config.roles).filter((role) => hasPermission(config.roles[role], perm));
+}
+
+// How many users hold `perm` (via their role) inside the running transaction.
+async function countUsersWith(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  perm: string,
+): Promise<number> {
+  const roles = rolesGranting(perm);
+  if (roles.length === 0) return 0;
   const [row] = await tx
     .select({ count: sql<number>`count(*)::int` })
     .from(users)
-    .where(eq(users.role, "admin"));
+    .where(inArray(users.role, roles));
   return row?.count ?? 0;
 }
 
@@ -36,7 +49,7 @@ export async function listUsers() {
     .orderBy(asc(users.email));
 }
 
-export type UserRole = "admin" | "editor";
+export type UserRole = string;
 
 export async function createUser(email: string, name: string, password: string, role: UserRole) {
   const passwordHash = await hash(password, 12);
@@ -54,30 +67,28 @@ export async function updateUserPassword(id: number, password: string) {
 }
 
 export async function updateUserRole(id: number, role: UserRole) {
+  const { config } = getActiveRbac();
+  const protectedPerm = config.protectedPermission;
   await db.transaction(async (tx) => {
-    // Menurunkan admin → editor: tolak bila ini admin terakhir.
-    if (role === "editor") {
-      const [target] = await tx
-        .select({ role: users.role })
-        .from(users)
-        .where(eq(users.id, id));
-      if (target?.role === "admin" && (await countAdmins(tx)) <= 1) {
-        throw new LastAdminError();
-      }
+    const [target] = await tx.select({ role: users.role }).from(users).where(eq(users.id, id));
+    const targetHadProtection = target?.role ? hasPermission(config.roles[target.role] ?? [], protectedPerm) : false;
+    const newRoleHasProtection = hasPermission(config.roles[role] ?? [], protectedPerm);
+    // Removing protection from the last user who has it would cause a lockout.
+    if (targetHadProtection && !newRoleHasProtection && (await countUsersWith(tx, protectedPerm)) <= 1) {
+      throw new LastAdminError();
     }
     await tx.update(users).set({ role }).where(eq(users.id, id));
   });
 }
 
 export async function deleteUser(id: number) {
+  const { config } = getActiveRbac();
+  const protectedPerm = config.protectedPermission;
   await db.transaction(async (tx) => {
-    const [target] = await tx
-      .select({ role: users.role })
-      .from(users)
-      .where(eq(users.id, id));
+    const [target] = await tx.select({ role: users.role }).from(users).where(eq(users.id, id));
     if (!target) return;
-    // Menghapus admin terakhir akan mengunci seluruh akses admin.
-    if (target.role === "admin" && (await countAdmins(tx)) <= 1) {
+    const hadProtection = target.role ? hasPermission(config.roles[target.role] ?? [], protectedPerm) : false;
+    if (hadProtection && (await countUsersWith(tx, protectedPerm)) <= 1) {
       throw new LastAdminError();
     }
     await tx.delete(users).where(eq(users.id, id));
