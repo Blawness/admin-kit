@@ -7,6 +7,12 @@ const config = {
   protectedPermission: "users.delete",
 };
 
+describe("getActiveRbac when unset", () => {
+  it("throws a clear setup error before any runtime is registered", () => {
+    expect(() => getActiveRbac()).toThrow(/RBAC not configured/);
+  });
+});
+
 describe("buildRuntime", () => {
   it("permissionsFor returns the role's list", () => {
     const rt = buildRuntime(config);
