@@ -78,6 +78,23 @@ pagination; the media gallery supports `?page=`. The data helpers
 (`listArticles`, `countArticles`, `listMedia`, `countMedia`) accept
 `limit`/`offset` so large datasets no longer load every row.
 
+## Storage provider (optional)
+
+`@blawness/admin-kit` defaults to Cloudflare R2. To use UploadThing instead:
+
+| Var | Purpose |
+|---|---|
+| `ADMIN_KIT_STORAGE_PROVIDER` | `r2` (default) or `uploadthing`. |
+| `UPLOADTHING_TOKEN` | UploadThing app token; required when the provider is `uploadthing`. |
+
+When using UploadThing, install the SDK (`pnpm add uploadthing`) and add the
+UploadThing host to `next.config` images:
+
+  images: { remotePatterns: [{ protocol: "https", hostname: "*.ufs.sh" }] }
+
+The public helpers (`uploadFile`, `uploadImage`, `deleteObjectByUrl`) and all
+built-in screens work unchanged against either backend.
+
 ## Phase 1 result
 - Directive preservation: CONFIRMED (`"use client"` intact in dist after tsc build).
 - Consumed by a Next.js 16.2.7 throwaway app via `transpilePackages` + Git-tag dependency: build PASSED, page rendered (HTTP 200).

@@ -4,6 +4,17 @@ All notable changes to `@blawness/admin-kit` are documented here. This project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and the
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
+## [Unreleased]
+
+### Added
+- **Pluggable storage providers.** Storage is now backend-agnostic: R2 remains
+  the default; set `ADMIN_KIT_STORAGE_PROVIDER=uploadthing` and supply
+  `UPLOADTHING_TOKEN` to switch to UploadThing. `uploadthing` is added as an
+  optional peer dependency (`^7.0.0`) — install it only when using that
+  provider (`pnpm add uploadthing`). The public API (`uploadFile`,
+  `uploadImage`, `deleteObjectByUrl`) and all built-in screens are unchanged
+  against either backend.
+
 ## [0.8.0] - 2026-06-29
 
 Customizable, permission-based RBAC. **This is a breaking change** — the fixed
