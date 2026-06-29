@@ -23,6 +23,11 @@ describe("uploadThingProvider.put", () => {
     );
     expect(res).toEqual({ url: "https://app.ufs.sh/f/abc123", key: "abc123", size: 8 });
     expect(uploadFiles).toHaveBeenCalledOnce();
+    // Buffer harus dibungkus jadi File dengan nama (base + ext) & content-type yang benar.
+    const [fileArg] = uploadFiles.mock.calls[0];
+    expect(fileArg).toBeInstanceOf(File);
+    expect(fileArg.name).toBe("xyz.webp");
+    expect(fileArg.type).toBe("image/webp");
   });
 
   it("throws when UTApi returns an error", async () => {
@@ -41,6 +46,14 @@ describe("uploadThingProvider.deleteByUrl", () => {
     const ok = await uploadThingProvider.deleteByUrl("https://app.ufs.sh/f/abc123");
     expect(ok).toBe(true);
     expect(deleteFiles).toHaveBeenCalledWith(["abc123"]);
+  });
+
+  it("extracts the key from a utfs.io url too", async () => {
+    deleteFiles.mockResolvedValue({ success: true });
+    const { uploadThingProvider } = await import("../src/lib/storage/uploadthing");
+    const ok = await uploadThingProvider.deleteByUrl("https://utfs.io/f/def456");
+    expect(ok).toBe(true);
+    expect(deleteFiles).toHaveBeenCalledWith(["def456"]);
   });
 
   it("ignores non-uploadthing urls", async () => {
