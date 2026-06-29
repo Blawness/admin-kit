@@ -96,8 +96,9 @@ export default async function UsersScreen({
                 <form action={setRoleAction} className="flex items-center gap-2">
                   <input type="hidden" name="id" value={u.id} />
                   <select name="role" defaultValue={u.role ?? "editor"} className="h-8 rounded-md border border-navy-200 bg-white px-2 text-xs">
-                    <option value="editor">Editor</option>
-                    <option value="admin">Admin</option>
+                    {Object.keys(getActiveRbac().config.roles).map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
                   </select>
                   <Button size="sm" variant="outline" type="submit">Set Role</Button>
                 </form>
