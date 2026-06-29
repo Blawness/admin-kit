@@ -93,7 +93,9 @@ UploadThing host to `next.config` images:
   images: { remotePatterns: [{ protocol: "https", hostname: "*.ufs.sh" }] }
 
 The public helpers (`uploadFile`, `uploadImage`, `deleteObjectByUrl`) and all
-built-in screens work unchanged against either backend.
+built-in screens work unchanged against either backend. Note: with UploadThing
+the `keyBase` path is not preserved as a folder structure — UploadThing assigns
+its own file key, so only the basename is used as the upload filename.
 
 ## Phase 1 result
 - Directive preservation: CONFIRMED (`"use client"` intact in dist after tsc build).

@@ -35,12 +35,17 @@ export const uploadThingProvider: StorageProvider = {
     const utapi = await getUTApi();
     const base = keyBase.split("/").pop() || "upload";
     const fileName = p.ext ? `${base}.${p.ext}` : base;
+    // `File` adalah global Node sejak v20 (Next.js 16 mensyaratkan Node 20.9+).
     const file = new File([new Uint8Array(p.body)], fileName, { type: p.contentType });
     const res = await utapi.uploadFiles(file);
     if (!res?.data || res.error) {
       throw new Error(`admin-kit: unggah ke UploadThing gagal${res?.error ? `: ${res.error.message}` : ""}`);
     }
-    return { url: res.data.ufsUrl, key: res.data.key, size: p.body.length };
+    // `ufsUrl` adalah field aktif; `url` adalah alias lama (deprecated) untuk
+    // kompatibilitas dengan rilis 7.x yang belum punya `ufsUrl`.
+    const url = res.data.ufsUrl ?? res.data.url;
+    if (!url) throw new Error("admin-kit: respons UploadThing tidak memuat URL file");
+    return { url, key: res.data.key, size: p.body.length };
   },
   async deleteByUrl(url: string) {
     const key = keyFromUrl(url);
