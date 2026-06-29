@@ -18,6 +18,7 @@ vi.mock("@aws-sdk/client-s3", () => {
 });
 
 beforeEach(() => {
+  vi.resetModules();
   send.mockReset();
   send.mockResolvedValue({});
   process.env.R2_ENDPOINT = "https://acc.r2.cloudflarestorage.com";
@@ -36,7 +37,17 @@ describe("r2Provider.put", () => {
     );
     expect(res.key).toBe("uploads/abc.webp");
     expect(res.url).toBe("https://cdn.example.com/uploads/abc.webp");
+    expect(res.size).toBe(1);
     expect(send).toHaveBeenCalledOnce();
+  });
+
+  it("rejects and uploads nothing when R2_PUBLIC_URL is unset", async () => {
+    delete process.env.R2_PUBLIC_URL;
+    const { r2Provider } = await import("../src/lib/storage/r2");
+    await expect(
+      r2Provider.put({ body: Buffer.from("x"), ext: "webp", contentType: "image/webp" }, "uploads/a"),
+    ).rejects.toThrow(/R2_PUBLIC_URL/);
+    expect(send).not.toHaveBeenCalled();
   });
 
   it("omits extension when ext is empty", async () => {

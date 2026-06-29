@@ -32,6 +32,8 @@ export function r2(): S3Client {
 export const r2Provider: StorageProvider = {
   name: "r2",
   async put(p: ProcessedUpload, keyBase: string) {
+    const publicUrl = R2_PUBLIC_URL();
+    if (!publicUrl) throw new Error("R2_PUBLIC_URL belum di-set — tidak bisa menyusun URL publik.");
     const base = keyBase.replace(/^\/+/, "");
     const key = p.ext ? `${base}.${p.ext}` : base;
     await getR2().send(
@@ -43,8 +45,6 @@ export const r2Provider: StorageProvider = {
         CacheControl: "public, max-age=31536000, immutable",
       }),
     );
-    const publicUrl = R2_PUBLIC_URL();
-    if (!publicUrl) throw new Error("R2_PUBLIC_URL belum di-set — tidak bisa menyusun URL publik.");
     return { url: `${publicUrl}/${key}`, key, size: p.body.length };
   },
   async deleteByUrl(url: string) {
