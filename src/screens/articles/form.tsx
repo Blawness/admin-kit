@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { requireUser } from "../../lib/auth-helpers";
+import { getActiveRbac } from "../../rbac/registry";
 import { getArticleById } from "../../lib/admin/articles";
 import { listCategories, listTags } from "../../lib/admin/categories";
 import { ArticleForm } from "./article-form";
@@ -17,7 +18,7 @@ export default async function ArticleFormScreen({
 }) {
   const session = await requireUser();
   const { id: idParam, error } = await searchParams;
-  const isAdmin = session.user.role === "admin";
+  const isAdmin = getActiveRbac().can(session.user.role, "articles.publish");
 
   const [categories, availableTags] = await Promise.all([
     listCategories(),
@@ -34,7 +35,7 @@ export default async function ArticleFormScreen({
     return (
       <ArticleForm
         mode="edit"
-        role={session.user.role ?? "editor"}
+        canPublish={isAdmin}
         categories={categories}
         availableTags={availableTags}
         error={error}
@@ -63,7 +64,7 @@ export default async function ArticleFormScreen({
   return (
     <ArticleForm
       mode="create"
-      role={session.user.role ?? "editor"}
+      canPublish={isAdmin}
       categories={categories}
       availableTags={availableTags}
       error={error}

@@ -4,6 +4,41 @@ All notable changes to `@blawness/admin-kit` are documented here. This project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and the
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
+## [0.8.0] - 2026-06-29
+
+Customizable, permission-based RBAC. **This is a breaking change** — the fixed
+`admin`/`editor` role model is replaced by consumer-defined roles and
+`resource.action` permissions. See [`docs/MIGRATION-0.8.md`](docs/MIGRATION-0.8.md)
+for the upgrade path (`presets.adminEditor` reproduces the legacy scopes).
+
+### Added
+- **`defineRbac(config)`** (`@blawness/admin-kit/rbac`) returns an edge-safe
+  bundle (`authConfig`, `can()`, `filterNav()`, …) and registers the resolved
+  config into a package-internal registry that the built-in screens read via
+  `getActiveRbac()`.
+- **Permissions** are `resource.action` strings with wildcard support (`*`,
+  `resource.*`); `hasPermission`/`matches` exported from `@blawness/admin-kit/rbac`.
+- **`requirePermission("<perm>")`** guard (`@blawness/admin-kit/auth-helpers`).
+- **Presets**: `presets.adminEditor` (legacy-compatible), `presets.fourTier`,
+  and composable `presets.permissions.*` bundles.
+- **Per-request permission resolution** — the JWT stores only the role, so a
+  role's permission map can change without forcing users to re-login.
+
+### Changed (breaking)
+- `requireAdmin()` is removed — replace with `requirePermission("<perm>")`.
+- Nav items use `requires: "<perm>"` instead of `adminOnly: true`.
+- Wire auth via `rbac.authConfig` (from `defineRbac`) / `buildAuthConfig(fallbackRole)`
+  instead of the old fixed `authConfig`.
+- A missing `users.role` now resolves to the configured `fallbackRole` at request
+  time. The column's hardcoded `'editor'` default is dropped (migration `0004`);
+  run `pnpm db:migrate` (or `drizzle-kit push`).
+- Register the config in the Node runtime via `instrumentation.ts` `register()`
+  (reliable on cold-start server actions); the admin-layout side-effect import
+  alone is not sufficient.
+
+### Fixed
+- CI: pin `packageManager` so `pnpm/action-setup` resolves a version.
+
 ## [0.7.2] - 2026-06-26
 
 ### Fixed

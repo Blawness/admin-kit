@@ -20,7 +20,7 @@ type Tag = { id: number; name: string; slug: string };
 
 export type ArticleFormProps = {
   mode: "create" | "edit";
-  role: string;
+  canPublish: boolean;
   categories: Category[];
   availableTags: Tag[];
   error?: string;
@@ -46,7 +46,7 @@ export type ArticleFormProps = {
 
 export function ArticleForm({
   mode,
-  role,
+  canPublish,
   categories,
   availableTags,
   error,
@@ -56,7 +56,7 @@ export function ArticleForm({
   publishAction,
   rejectAction,
 }: ArticleFormProps) {
-  const isAdmin = role === "admin";
+  const isAdmin = canPublish;
   const isPendingReview = initial?.status === "pending_review";
 
   const [title, setTitle] = useState(initial?.title ?? "");

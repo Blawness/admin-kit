@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { requireAdmin } from "../../lib/auth-helpers";
+import { requirePermission } from "../../lib/auth-helpers";
+import { getActiveRbac } from "../../rbac/registry";
 import { isUniqueViolation, isForeignKeyViolation } from "../../lib/db-errors";
 import { createUser, updateUserPassword, updateUserRole, deleteUser, isLastAdminError } from "../../lib/admin/users";
 import { logAudit } from "../../lib/audit";
@@ -12,11 +13,13 @@ const createSchema = z.object({
   email: z.string().email(),
   name: z.string().min(1),
   password: z.string().min(8),
-  role: z.enum(["admin", "editor"]),
+  role: z.string().min(1),
 });
 
+const isKnownRole = (role: string) => role in getActiveRbac().config.roles;
+
 export async function createUserAction(formData: FormData) {
-  const session = await requireAdmin();
+  const session = await requirePermission("users.create");
   const rawEmail = String(formData.get("email") ?? "");
   const rawName = String(formData.get("name") ?? "");
   const rawRole = String(formData.get("role") ?? "");
@@ -35,6 +38,7 @@ export async function createUserAction(formData: FormData) {
     );
   }
   const { email, name, password, role } = parsed.data;
+  if (!isKnownRole(role)) redirect(`/admin/users?error=Role+tidak+dikenal${keep}`);
   try {
     const user = await createUser(email, name, password, role);
     logAudit({
@@ -54,7 +58,7 @@ export async function createUserAction(formData: FormData) {
 }
 
 export async function resetPasswordAction(formData: FormData) {
-  const session = await requireAdmin();
+  const session = await requirePermission("users.update");
   const id = Number(formData.get("id"));
   const password = String(formData.get("password") ?? "");
   if (!id || password.length < 8) return;
@@ -69,10 +73,10 @@ export async function resetPasswordAction(formData: FormData) {
 }
 
 export async function setRoleAction(formData: FormData) {
-  const session = await requireAdmin();
+  const session = await requirePermission("users.update");
   const id = Number(formData.get("id"));
   const role = String(formData.get("role") ?? "");
-  if (!id || (role !== "admin" && role !== "editor")) return;
+  if (!id || !isKnownRole(role)) return;
   try {
     await updateUserRole(id, role);
     logAudit({
@@ -92,7 +96,7 @@ export async function setRoleAction(formData: FormData) {
 }
 
 export async function deleteUserAction(formData: FormData) {
-  const session = await requireAdmin();
+  const session = await requirePermission("users.delete");
   const id = Number(formData.get("id"));
   if (!id || id === Number(session.user.id)) return; // never delete yourself / invalid id
   try {

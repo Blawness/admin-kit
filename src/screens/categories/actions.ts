@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { requireAdmin } from "../../lib/auth-helpers";
+import { requirePermission } from "../../lib/auth-helpers";
 import { isUniqueViolation } from "../../lib/db-errors";
 import {
   createCategory,
@@ -15,7 +15,7 @@ import { logAudit } from "../../lib/audit";
 const nameSchema = z.string().min(1, "Nama tidak boleh kosong").max(100);
 
 export async function createCategoryAction(fd: FormData) {
-  const session = await requireAdmin();
+  const session = await requirePermission("categories.create");
   const name = String(fd.get("name") ?? "");
   const result = nameSchema.safeParse(fd.get("name"));
   if (!result.success) {
@@ -43,7 +43,7 @@ export async function createCategoryAction(fd: FormData) {
 }
 
 export async function deleteCategoryAction(fd: FormData) {
-  const session = await requireAdmin();
+  const session = await requirePermission("categories.delete");
   const id = Number(fd.get("id"));
   if (!id || isNaN(id)) redirect("/admin/categories");
   await deleteCategory(id);
@@ -57,7 +57,7 @@ export async function deleteCategoryAction(fd: FormData) {
 }
 
 export async function createTagAction(fd: FormData) {
-  const session = await requireAdmin();
+  const session = await requirePermission("categories.create");
   const name = String(fd.get("name") ?? "");
   const result = nameSchema.safeParse(fd.get("name"));
   if (!result.success) {
@@ -84,7 +84,7 @@ export async function createTagAction(fd: FormData) {
 }
 
 export async function deleteTagAction(fd: FormData) {
-  const session = await requireAdmin();
+  const session = await requirePermission("categories.delete");
   const id = Number(fd.get("id"));
   if (!id || isNaN(id)) redirect("/admin/categories");
   await deleteTag(id);

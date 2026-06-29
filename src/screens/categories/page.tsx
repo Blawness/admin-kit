@@ -1,4 +1,4 @@
-import { requireAdmin } from "../../lib/auth-helpers";
+import { requirePermission } from "../../lib/auth-helpers";
 import { listCategories, listTags } from "../../lib/admin/categories";
 import { ConfirmDelete } from "../../components/confirm-delete";
 import { Button } from "../../components/ui/button";
@@ -16,7 +16,7 @@ export default async function CategoriesScreen({
 }: {
   searchParams: Promise<{ error?: string; catName?: string; tagName?: string }>;
 }) {
-  await requireAdmin();
+  await requirePermission("categories.read");
   const [categories, tags] = await Promise.all([listCategories(), listTags()]);
   const { error, catName, tagName } = await searchParams;
 

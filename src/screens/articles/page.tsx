@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireUser } from "../../lib/auth-helpers";
+import { getActiveRbac } from "../../rbac/registry";
 import { listArticles, countArticles, type ArticleStatus } from "../../lib/admin/articles";
 import { ConfirmDelete } from "../../components/confirm-delete";
 import { deleteArticleAction } from "./actions";
@@ -35,7 +36,7 @@ export default async function ArticlesScreen({
 }) {
   const session = await requireUser();
   const { status, error, q: rawQ, page: rawPage } = await searchParams;
-  const isAdmin = session.user.role === "admin";
+  const isAdmin = getActiveRbac().can(session.user.role, "articles.publish");
 
   const validStatus =
     status && VALID_STATUSES.has(status) ? (status as ArticleStatus) : undefined;

@@ -1,18 +1,16 @@
 import { redirect } from "next/navigation";
 import { auth } from "../auth/index";
+import { getActiveRbac } from "../rbac/registry";
+import type { Permission } from "../rbac/permissions";
 
-/** Any authenticated user (admin or editor). Returns the session. */
+/** Any authenticated user. Returns the session. */
 export async function requireUser() {
   const session = await auth();
   if (!session?.user) redirect("/admin/login");
   return session;
 }
 
-/**
- * Authenticated user ID as integer (matches DB `serial` columns).
- * Thin wrapper around requireUser — use this in mutations instead of
- * `Number(session.user.id)` everywhere.
- */
+/** Authenticated user ID as integer (matches DB `serial` columns). */
 export async function requireUserId(): Promise<number> {
   const session = await requireUser();
   const id = Number(session.user.id);
@@ -20,9 +18,14 @@ export async function requireUserId(): Promise<number> {
   return id;
 }
 
-/** Admin only. Editors are sent to the dashboard. */
-export async function requireAdmin() {
+/**
+ * Require a specific permission. Redirects unauthenticated users to login and
+ * authenticated-but-unauthorized users to the dashboard. Resolves role →
+ * permissions through the active RBAC runtime.
+ */
+export async function requirePermission(perm: Permission) {
   const session = await requireUser();
-  if (session.user.role !== "admin") redirect("/admin");
+  const role = (session.user as { role?: string }).role ?? null;
+  if (!getActiveRbac().can(role, perm)) redirect("/admin");
   return session;
 }

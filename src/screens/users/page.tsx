@@ -1,4 +1,5 @@
-import { requireAdmin } from "../../lib/auth-helpers";
+import { requirePermission } from "../../lib/auth-helpers";
+import { getActiveRbac } from "../../rbac/registry";
 import { listUsers } from "../../lib/admin/users";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -19,8 +20,9 @@ export default async function UsersScreen({
     role?: string;
   }>;
 }) {
-  const session = await requireAdmin();
+  const session = await requirePermission("users.read");
   const rows = await listUsers();
+  const rbac = getActiveRbac();
   const { error, email, name, role } = await searchParams;
 
   return (
@@ -46,9 +48,10 @@ export default async function UsersScreen({
         <Input name="name" placeholder="Nama" required defaultValue={name} />
         <Input name="email" type="email" placeholder="Email" required defaultValue={email} />
         <Input name="password" type="password" placeholder="Password (min 8)" required />
-        <select name="role" className={selectClass} defaultValue={role === "admin" ? "admin" : "editor"}>
-          <option value="editor">Editor</option>
-          <option value="admin">Admin</option>
+        <select name="role" className={selectClass} defaultValue={role}>
+          {Object.keys(rbac.config.roles).map((r) => (
+            <option key={r} value={r}>{r}</option>
+          ))}
         </select>
         <Button type="submit" className="sm:col-span-2">
           <UserPlus className="h-4 w-4" />
@@ -59,7 +62,8 @@ export default async function UsersScreen({
       <ul className="mt-6 divide-y divide-navy-50 overflow-hidden rounded-xl border border-navy-100 bg-white shadow-sm">
         {rows.map((u) => {
           const isSelf = u.id === Number(session.user.id);
-          const isAdmin = (u.role ?? "editor") === "admin";
+          // Highlight roles that hold the protected (admin-equivalent) permission.
+          const isPrivileged = rbac.can(u.role ?? rbac.config.fallbackRole, rbac.config.protectedPermission);
           return (
             <li key={u.id} className="space-y-3 p-4">
               <div className="flex items-center justify-between gap-3">
@@ -81,21 +85,22 @@ export default async function UsersScreen({
                 </div>
                 <span
                   className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ring-1 ${
-                    isAdmin
+                    isPrivileged
                       ? "bg-gold-100 text-gold-700 ring-gold-200"
                       : "bg-brand-50 text-brand-700 ring-brand-100"
                   }`}
                 >
-                  {u.role ?? "editor"}
+                  {u.role ?? rbac.config.fallbackRole}
                 </span>
               </div>
 
               <div className="flex flex-wrap items-center gap-2 border-t border-navy-50 pt-3">
                 <form action={setRoleAction} className="flex items-center gap-2">
                   <input type="hidden" name="id" value={u.id} />
-                  <select name="role" defaultValue={u.role ?? "editor"} className="h-8 rounded-md border border-navy-200 bg-white px-2 text-xs">
-                    <option value="editor">Editor</option>
-                    <option value="admin">Admin</option>
+                  <select name="role" defaultValue={u.role ?? rbac.config.fallbackRole} className="h-8 rounded-md border border-navy-200 bg-white px-2 text-xs">
+                    {Object.keys(rbac.config.roles).map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
                   </select>
                   <Button size="sm" variant="outline" type="submit">Set Role</Button>
                 </form>
