@@ -13,8 +13,17 @@ export const rbac = defineRbac({
 ```
 
 ## 2. Wire it
-- `middleware.ts`: `NextAuth(rbac.authConfig)` (replaces importing `@blawness/admin-kit/auth/config`).
-- Admin root layout: add a side-effect import pointing at your `rbac.ts` (adjust the relative depth to your file, e.g. `import "../../rbac"`) so the config registers in the node runtime. (The demo's layout sits three levels deep and uses `import "../../../rbac"`.)
+- `middleware.ts`: `NextAuth(rbac.authConfig)` (replaces importing `@blawness/admin-kit/auth/config`). This runs on the edge runtime and is the required wiring for auth middleware.
+- **`instrumentation.ts` (recommended):** Register your config in the node runtime by adding an `instrumentation.ts` at your project root:
+  ```ts
+  export async function register() {
+    if (process.env.NEXT_RUNTIME === "nodejs") {
+      await import("./rbac");
+    }
+  }
+  ```
+  This guarantees registration on every cold start regardless of which module graph is evaluated first. Without it, a cold serverless instance handling a server-action POST that doesn't evaluate the admin layout module graph will hit `getActiveRbac()` → throw "RBAC not configured" → 500.
+- Admin root layout: you may also add a side-effect import pointing at your `rbac.ts` (e.g. `import "../../rbac"`). This is sufficient for page requests but **does not cover server actions on cold starts** — relying on it alone is fragile in serverless environments. The demo's layout uses `import "../../../rbac"` as a belt-and-suspenders addition alongside `instrumentation.ts`.
 
 ## 3. Replace gating in your own code
 - `requireAdmin()` → `requirePermission("<perm>")` from `@blawness/admin-kit/auth-helpers`.
