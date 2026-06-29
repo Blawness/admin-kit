@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { requireUser } from "../../lib/auth-helpers";
-import { deleteObjectByUrl } from "../../lib/r2";
+import { deleteObjectByUrl } from "../../lib/storage/index";
 import { getMediaById, deleteMediaRow } from "../../lib/admin/media";
 import { revalidatePath } from "next/cache";
 

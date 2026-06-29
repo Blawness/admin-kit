@@ -2,7 +2,7 @@ export { cn } from "./lib/utils";
 export { slugify } from "./lib/slug";
 export { sanitizeHtml } from "./lib/sanitize";
 export * from "./lib/db-errors";
-export * from "./lib/r2";
+export * from "./lib/storage/index";
 export * from "./lib/rate-limit";
 export * from "./lib/audit";
 export * from "./db/schema";
