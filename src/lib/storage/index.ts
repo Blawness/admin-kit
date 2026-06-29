@@ -31,6 +31,11 @@ export async function getActiveProvider(): Promise<StorageProvider> {
   return _provider;
 }
 
+/** Reset cache provider — hanya untuk test agar tidak bocor antar berkas uji. */
+export function _resetProviderForTests(): void {
+  _provider = null;
+}
+
 /**
  * Unggah buffer sembarang. Gambar diproses sharp; non-gambar (skipProcessing)
  * dilewatkan apa adanya. Mengembalikan URL publik dari provider aktif.
