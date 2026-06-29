@@ -1,12 +1,52 @@
-import type { StorageProvider } from "./types";
+// src/lib/storage/uploadthing.ts
+import type { ProcessedUpload, StorageProvider } from "./types";
 
-// Stub sementara — implementasi UTApi yang sesungguhnya menyusul di Task 4.
+// Import dinamis: konsumen R2-only tidak perlu memasang paket `uploadthing`.
+async function getUTApi() {
+  let mod: typeof import("uploadthing/server");
+  try {
+    mod = await import("uploadthing/server");
+  } catch {
+    throw new Error("admin-kit: pasang paket `uploadthing` untuk memakai storage provider UploadThing");
+  }
+  // UTApi membaca UPLOADTHING_TOKEN dari env secara otomatis.
+  return new mod.UTApi();
+}
+
+// Ambil file key dari URL UploadThing (.../f/<key>) pada host ufs.sh / utfs.io.
+function keyFromUrl(url: string): string | null {
+  let host: string;
+  let path: string;
+  try {
+    const u = new URL(url);
+    host = u.hostname;
+    path = u.pathname;
+  } catch {
+    return null;
+  }
+  if (!host.endsWith("ufs.sh") && host !== "utfs.io") return null;
+  const m = path.match(/^\/f\/([^/?#]+)/);
+  return m ? m[1] : null;
+}
+
 export const uploadThingProvider: StorageProvider = {
   name: "uploadthing",
-  async put() {
-    throw new Error("admin-kit: UploadThing provider belum diimplementasikan");
+  async put(p: ProcessedUpload, keyBase: string) {
+    const utapi = await getUTApi();
+    const base = keyBase.split("/").pop() || "upload";
+    const fileName = p.ext ? `${base}.${p.ext}` : base;
+    const file = new File([new Uint8Array(p.body)], fileName, { type: p.contentType });
+    const res = await utapi.uploadFiles(file);
+    if (!res?.data || res.error) {
+      throw new Error(`admin-kit: unggah ke UploadThing gagal${res?.error ? `: ${res.error.message}` : ""}`);
+    }
+    return { url: res.data.ufsUrl, key: res.data.key, size: p.body.length };
   },
-  async deleteByUrl() {
-    return false;
+  async deleteByUrl(url: string) {
+    const key = keyFromUrl(url);
+    if (!key) return false;
+    const utapi = await getUTApi();
+    await utapi.deleteFiles([key]);
+    return true;
   },
 };
