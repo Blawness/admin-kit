@@ -12,6 +12,17 @@ const contentEditor: Permission[] = [
   "profile.edit",
 ];
 
+/**
+ * Exact scope the legacy `editor` role had before 0.8: read/create/update articles,
+ * read/upload media, and edit own profile. Publish, delete, category mutations, and
+ * user management remain admin-only — matching the pre-0.8 requireAdmin gates.
+ */
+const legacyEditor: Permission[] = [
+  "articles.read", "articles.create", "articles.update",
+  "media.read", "media.upload",
+  "profile.edit",
+];
+
 const mediaManager: Permission[] = ["media.read", "media.upload", "media.delete", "profile.edit"];
 
 const viewer: Permission[] = [
@@ -20,10 +31,15 @@ const viewer: Permission[] = [
 
 /** Ready-made role maps and permission bundles consumers can spread into defineRbac. */
 export const presets = {
-  /** Replicates the legacy 2-role behavior. */
+  /**
+   * Replicates the legacy 2-role behavior: admin is all-powerful ("*") and editor
+   * receives exactly the pre-0.8 editor scope (read/create/update articles,
+   * read/upload media, profile.edit). Publish, delete, category mutations, and user
+   * management remain admin-only, preserving the zero-change upgrade path.
+   */
   adminEditor: {
     admin: ["*"] as Permission[],
-    editor: contentEditor,
+    editor: legacyEditor,
   },
   /** Common four-tier hierarchy. */
   fourTier: {
