@@ -8,6 +8,12 @@ describe("buildAuthConfig", () => {
     const token = jwt({ token: {}, user: { id: "1" } });
     expect(token.role).toBe("viewer");
   });
+  it("jwt callback resolves a null role to fallbackRole", () => {
+    const cfg = buildAuthConfig("viewer");
+    const jwt = cfg.callbacks!.jwt as (a: { token: Record<string, unknown>; user?: Record<string, unknown> }) => Record<string, unknown>;
+    const token = jwt({ token: {}, user: { id: "1", role: null } });
+    expect(token.role).toBe("viewer");
+  });
   it("jwt callback keeps an explicit user role", () => {
     const cfg = buildAuthConfig("viewer");
     const jwt = cfg.callbacks!.jwt as (a: { token: Record<string, unknown>; user?: Record<string, unknown> }) => Record<string, unknown>;

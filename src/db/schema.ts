@@ -14,7 +14,9 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   name: text("name").notNull(),
   passwordHash: text("password_hash"),
-  role: text("role").default("editor"),
+  // No hardcoded default: a missing role resolves to the consumer's
+  // configured fallbackRole at request time (see auth/config.ts).
+  role: text("role"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

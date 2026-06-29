@@ -30,6 +30,9 @@ export const rbac = defineRbac({
 - Nav items: `adminOnly: true` → `requires: "<perm>"`.
 
 ## 4. Data
-The `users.role` column is unchanged. Existing `admin`/`editor` rows keep working
-as long as those role names exist in your `defineRbac` config (they do if you use
+The `users.role` column drops its hardcoded `'editor'` default (migration
+`0004_*`) — run `pnpm db:migrate` (or `drizzle-kit push`). A row with a NULL
+role now resolves to your configured `fallbackRole` at request time instead of
+silently becoming `editor`. Existing `admin`/`editor` rows keep working as long
+as those role names exist in your `defineRbac` config (they do if you use
 `presets.adminEditor`). If you rename roles, `UPDATE users SET role = ...` accordingly.
