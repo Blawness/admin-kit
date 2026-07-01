@@ -13,7 +13,7 @@ vi.mock("../src/db/index.ts", () => ({
 
 vi.mock("../src/lib/r2.ts", () => ({ deleteObjectByUrl: deleteObjectByUrlMock }));
 
-import { deleteArticle } from "../src/lib/admin/articles.ts";
+import { deleteArticle, submitForReview } from "../src/lib/admin/articles.ts";
 
 /** Make db.select(...).from(...).where(...) resolve to `rows`. */
 function selectReturning(rows: unknown[]) {
@@ -64,5 +64,30 @@ describe("deleteArticle", () => {
     selectReturning([{ coverImageUrl: "https://cdn.example.com/x.jpg", authorId: 7 }]);
     await deleteArticle(5, { userId: 7, isAdmin: false });
     expect(deleteObjectByUrlMock).toHaveBeenCalledWith("https://cdn.example.com/x.jpg");
+  });
+});
+
+describe("submitForReview", () => {
+  it("allows the author to submit their own draft", async () => {
+    selectReturning([{ authorId: 3, status: "draft", content: "<p>hello</p>" }]);
+    await expect(submitForReview(1, 3)).resolves.toBeUndefined();
+    expect(mockUpdate).toHaveBeenCalled();
+  });
+
+  it("rejects a non-author with no ctx argument", async () => {
+    selectReturning([{ authorId: 3, status: "draft", content: "<p>hello</p>" }]);
+    await expect(submitForReview(1, 9)).rejects.toThrow("Tidak diizinkan.");
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it("rejects a non-author when ctx.isAdmin is false", async () => {
+    selectReturning([{ authorId: 3, status: "draft", content: "<p>hello</p>" }]);
+    await expect(submitForReview(1, 9, { isAdmin: false })).rejects.toThrow("Tidak diizinkan.");
+  });
+
+  it("allows a non-author when ctx.isAdmin is true", async () => {
+    selectReturning([{ authorId: 3, status: "draft", content: "<p>hello</p>" }]);
+    await expect(submitForReview(1, 9, { isAdmin: true })).resolves.toBeUndefined();
+    expect(mockUpdate).toHaveBeenCalled();
   });
 });

@@ -213,7 +213,7 @@ export async function updateArticle(
   });
 }
 
-export async function submitForReview(id: number, userId: number) {
+export async function submitForReview(id: number, userId: number, ctx?: { isAdmin: boolean }) {
   const [existing] = await db
     .select({
       authorId: articles.authorId,
@@ -223,7 +223,7 @@ export async function submitForReview(id: number, userId: number) {
     .from(articles)
     .where(eq(articles.id, id));
   if (!existing) throw new Error("Artikel tidak ditemukan.");
-  if (existing.authorId !== userId) throw new Error("Tidak diizinkan.");
+  if (!ctx?.isAdmin && existing.authorId !== userId) throw new Error("Tidak diizinkan.");
   if (existing.status === "published") throw new Error("Artikel yang sudah dipublikasi tidak dapat diajukan ulang.");
   const stripped = existing.content?.replace(/<[^>]+>/g, "").trim() ?? "";
   if (!stripped) throw new Error("Konten artikel tidak boleh kosong saat mengajukan review.");
