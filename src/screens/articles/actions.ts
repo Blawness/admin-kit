@@ -103,7 +103,9 @@ export async function createArticleAction(fd: FormData) {
 
   if (intent === "review") {
     try {
-      await submitForReview(articleId, Number(session.user.id));
+      await submitForReview(articleId, Number(session.user.id), {
+        isAdmin: getActiveRbac().can(session.user.role, "articles.manageAny"),
+      });
       logAudit({
         actorId: Number(session.user.id),
         action: "article.submit",
@@ -124,6 +126,7 @@ export async function updateArticleAction(fd: FormData) {
   const id = Number(fd.get("id"));
   if (!id || isNaN(id)) redirect("/admin/articles");
   const intent = fd.get("intent") as "draft" | "review";
+  const isAdmin = getActiveRbac().can(session.user.role, "articles.manageAny");
 
   const parsed = articleSchema.safeParse({
     title: fd.get("title"),
@@ -144,7 +147,7 @@ export async function updateArticleAction(fd: FormData) {
     await updateArticle(
       id,
       { ...rest, content: sanitized, categoryId: parseCategoryId(fd), tagIds: parseTagIds(fd) },
-      { userId: Number(session.user.id), isAdmin: getActiveRbac().can(session.user.role, "articles.publish") }
+      { userId: Number(session.user.id), isAdmin }
     );
     logAudit({
       actorId: Number(session.user.id),
@@ -166,7 +169,7 @@ export async function updateArticleAction(fd: FormData) {
 
   if (intent === "review") {
     try {
-      await submitForReview(id, Number(session.user.id));
+      await submitForReview(id, Number(session.user.id), { isAdmin });
       logAudit({
         actorId: Number(session.user.id),
         action: "article.submit",
@@ -228,7 +231,13 @@ export async function deleteArticleAction(fd: FormData) {
   const session = await requirePermission("articles.delete");
   const id = Number(fd.get("id"));
   if (!id || isNaN(id)) redirect("/admin/articles");
-  await deleteArticle(id);
+  const isAdmin = getActiveRbac().can(session.user.role, "articles.manageAny");
+  try {
+    await deleteArticle(id, { userId: Number(session.user.id), isAdmin });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Gagal menghapus artikel.";
+    redirect(`/admin/articles?error=${encodeURIComponent(msg)}`);
+  }
   logAudit({
     actorId: Number(session.user.id),
     action: "article.delete",
