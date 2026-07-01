@@ -18,7 +18,8 @@ export default async function ArticleFormScreen({
 }) {
   const session = await requireUser();
   const { id: idParam, error } = await searchParams;
-  const isAdmin = getActiveRbac().can(session.user.role, "articles.publish");
+  const isAdmin = getActiveRbac().can(session.user.role, "articles.manageAny");
+  const canPublish = getActiveRbac().can(session.user.role, "articles.publish");
 
   const [categories, availableTags] = await Promise.all([
     listCategories(),
@@ -35,7 +36,7 @@ export default async function ArticleFormScreen({
     return (
       <ArticleForm
         mode="edit"
-        canPublish={isAdmin}
+        canPublish={canPublish}
         categories={categories}
         availableTags={availableTags}
         error={error}
@@ -64,7 +65,7 @@ export default async function ArticleFormScreen({
   return (
     <ArticleForm
       mode="create"
-      canPublish={isAdmin}
+      canPublish={canPublish}
       categories={categories}
       availableTags={availableTags}
       error={error}
