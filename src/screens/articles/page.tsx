@@ -36,7 +36,8 @@ export default async function ArticlesScreen({
 }) {
   const session = await requireUser();
   const { status, error, q: rawQ, page: rawPage } = await searchParams;
-  const isAdmin = getActiveRbac().can(session.user.role, "articles.publish");
+  const isAdmin = getActiveRbac().can(session.user.role, "articles.manageAny");
+  const canDelete = getActiveRbac().can(session.user.role, "articles.delete");
 
   const validStatus =
     status && VALID_STATUSES.has(status) ? (status as ArticleStatus) : undefined;
@@ -180,7 +181,7 @@ export default async function ArticlesScreen({
                 >
                   Edit
                 </Link>
-                {isAdmin && (
+                {canDelete && (isAdmin || item.authorId === Number(session.user.id)) && (
                   <ConfirmDelete
                     action={deleteArticleAction}
                     id={item.id}
