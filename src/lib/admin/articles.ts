@@ -261,17 +261,20 @@ export async function rejectArticle(id: number) {
     .where(eq(articles.id, id));
 }
 
-export async function deleteArticle(id: number) {
+export async function deleteArticle(id: number, ctx: { userId: number; isAdmin: boolean }) {
   const [existing] = await db
-    .select({ coverImageUrl: articles.coverImageUrl })
+    .select({ coverImageUrl: articles.coverImageUrl, authorId: articles.authorId })
     .from(articles)
     .where(eq(articles.id, id));
+  if (!existing) throw new Error("Artikel tidak ditemukan.");
+  if (!ctx.isAdmin && existing.authorId !== ctx.userId)
+    throw new Error("Tidak diizinkan menghapus artikel ini.");
 
   await db.delete(articles).where(eq(articles.id, id));
 
   // Hapus cover di R2 setelah baris terhapus agar kegagalan storage tidak
   // menghalangi penghapusan record. URL non-R2 diabaikan dengan aman.
-  if (existing?.coverImageUrl) {
+  if (existing.coverImageUrl) {
     await deleteObjectByUrl(existing.coverImageUrl);
   }
 }
