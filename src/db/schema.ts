@@ -25,6 +25,9 @@ export const media = pgTable("media", {
   url: text("url").notNull(),
   altText: text("alt_text"),
   album: text("album"),
+  // Nullable: pre-existing rows have no known uploader and are treated as
+  // "unowned" — deletable only by media.manageAny holders (see lib/admin/media.ts).
+  uploadedBy: integer("uploaded_by").references(() => users.id),
   uploadedAt: timestamp("uploaded_at").defaultNow(),
 });
 
