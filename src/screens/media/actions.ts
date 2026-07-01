@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireUser } from "../../lib/auth-helpers";
+import { requirePermission } from "../../lib/auth-helpers";
 import { uploadImage, uploadFile } from "../../lib/r2";
 import { db } from "../../db/index";
 import { media } from "../../db/schema";
@@ -9,7 +9,7 @@ import { OK_IMAGE_TYPES, MAX_IMAGE_BYTES } from "../../lib/upload-constants";
 import { logAudit } from "../../lib/audit";
 
 export async function uploadImageAction(formData: FormData): Promise<{ url?: string; error?: string }> {
-  const session = await requireUser();
+  const session = await requirePermission("media.upload");
   const file = formData.get("file");
   if (!(file instanceof File)) return { error: "Tidak ada berkas." };
 
@@ -50,7 +50,10 @@ export async function uploadImageAction(formData: FormData): Promise<{ url?: str
     return { error: "Berkas gagal diproses." };
   }
 
-  const [row] = await db.insert(media).values({ url, altText: file.name, album }).returning({ id: media.id });
+  const [row] = await db
+    .insert(media)
+    .values({ url, altText: file.name, album, uploadedBy: Number(session.user.id) })
+    .returning({ id: media.id });
   logAudit({
     actorId: Number(session.user.id),
     action: "media.upload",

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { listMedia, countMedia } from "../../lib/admin/media";
-import { requireUser } from "../../lib/auth-helpers";
+import { requirePermission } from "../../lib/auth-helpers";
 import { ConfirmDelete } from "../../components/confirm-delete";
 import { GalleryUploader } from "./uploader";
 import { Trash2, ImageOff, AlertCircle, Search, X } from "lucide-react";
@@ -14,7 +14,7 @@ export default async function MediaLibraryScreen({
   deleteAction: (fd: FormData) => Promise<void>;
   searchParams: Promise<{ error?: string; page?: string; q?: string; album?: string }>;
 }) {
-  await requireUser();
+  await requirePermission("media.read");
   const { error, page: rawPage, q: rawQ, album: rawAlbum } = await searchParams;
   const q = rawQ ?? "";
   const album = rawAlbum ?? "";

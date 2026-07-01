@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { requireUser } from "../../lib/auth-helpers";
+import { requirePermission } from "../../lib/auth-helpers";
 import { deleteObjectByUrl } from "../../lib/storage/index";
 import { getMediaById, deleteMediaRow } from "../../lib/admin/media";
 import { revalidatePath } from "next/cache";
@@ -15,7 +15,8 @@ export async function handleDeleteMedia(
   formData: FormData,
   referenceChecker: (url: string) => Promise<number>,
 ): Promise<void> {
-  await requireUser();
+  const session = await requirePermission("media.delete");
+  void session;
   const id = Number(formData.get("id"));
   if (!id) return;
 
