@@ -40,4 +40,11 @@ describe("presets", () => {
     expect(presets.adminEditor.editor).not.toContain("articles.manageAny");
     expect(presets.fourTier.viewer).not.toContain("articles.manageAny");
   });
+  it("media.manageAny is granted to contentEditor and mediaManager but not articleAuthor, legacyEditor (adminEditor.editor), or fourTier.viewer", () => {
+    expect(presets.permissions.contentEditor).toContain("media.manageAny");
+    expect(presets.permissions.mediaManager).toContain("media.manageAny");
+    expect(presets.permissions.articleAuthor).not.toContain("media.manageAny");
+    expect(presets.adminEditor.editor).not.toContain("media.manageAny");
+    expect(presets.fourTier.viewer).not.toContain("media.manageAny");
+  });
 });

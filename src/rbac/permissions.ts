@@ -2,6 +2,7 @@
 export type BuiltInPermission =
   | "users.read" | "users.create" | "users.update" | "users.delete"
   | "media.read" | "media.upload" | "media.delete"
+  | "media.manageAny"
   | "articles.read" | "articles.create" | "articles.update" | "articles.delete" | "articles.publish"
   | "articles.manageAny"
   | "categories.read" | "categories.create" | "categories.update" | "categories.delete"

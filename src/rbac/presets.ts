@@ -10,6 +10,7 @@ const contentEditor: Permission[] = [
   "articles.manageAny",
   "categories.read", "categories.create", "categories.update", "categories.delete",
   "media.read", "media.upload", "media.delete",
+  "media.manageAny",
   "profile.edit",
 ];
 
@@ -24,7 +25,7 @@ const legacyEditor: Permission[] = [
   "profile.edit",
 ];
 
-const mediaManager: Permission[] = ["media.read", "media.upload", "media.delete", "profile.edit"];
+const mediaManager: Permission[] = ["media.read", "media.upload", "media.delete", "media.manageAny", "profile.edit"];
 
 const viewer: Permission[] = [
   "articles.read", "categories.read", "media.read", "users.read",
