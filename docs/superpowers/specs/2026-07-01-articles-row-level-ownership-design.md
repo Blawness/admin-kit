@@ -43,12 +43,13 @@ your own." It replaces the `articles.publish` proxy used today.
 - `contentEditor` — add `articles.manageAny` (preserves current behavior: this bundle
   already effectively acts on all articles via the publish proxy).
 - `adminEditor.admin` — unaffected; already covered by `"*"`.
-- `viewer` (in `fourTier`) — add `articles.manageAny`. This fixes the latent bug: a
-  read-only viewer should see all articles, not be scoped to "own" (which is always
-  empty for a role that never authors content). Safe because `viewer` has no write
-  permissions, so `manageAny` only affects read-list scope for this role.
-- `legacyEditor`, `articleAuthor` — unchanged. They keep ownership-scoped behavior,
-  preserving the pre-0.8 zero-change upgrade path documented in `presets.ts`.
+- `viewer` (in `fourTier`), `legacyEditor`, `articleAuthor` — unchanged. `viewer` keeps
+  its existing "sees only own articles" behavior (a pre-existing gap for a role that
+  never authors content, but out of scope here: `test/rbac-presets.test.ts` asserts
+  `fourTier.viewer` is strictly read-only — every permission ends in `.read` — and
+  `articles.manageAny` would violate that invariant. `legacyEditor`/`articleAuthor` keep
+  ownership-scoped behavior, preserving the pre-0.8 zero-change upgrade path documented
+  in `presets.ts`.
 
 ### Enforcement changes
 
@@ -99,8 +100,9 @@ your own." It replaces the `articles.publish` proxy used today.
 
 ## Testing
 
-- `test/rbac-presets.test.ts` — assert `articles.manageAny` is present for `contentEditor`
-  and `fourTier.viewer`, absent for `articleAuthor`/`legacyEditor`.
+- `test/rbac-presets.test.ts` — assert `articles.manageAny` is present for `contentEditor`,
+  absent for `articleAuthor`/`legacyEditor`/`fourTier.viewer`. Confirm the existing
+  `fourTier viewer is read-only` assertion still passes unchanged.
 - New test coverage for `deleteArticle` ownership: owner can delete own article,
   non-owner without `isAdmin` is rejected, `isAdmin: true` can delete any article.
 - New test coverage for `submitForReview` with `ctx.isAdmin` override.
@@ -112,3 +114,6 @@ your own." It replaces the `articles.publish` proxy used today.
   `lib/admin/articles.ts`), matching the existing code style rather than introducing a
   new abstraction for a single resource.
 - No changes to media/users/categories ownership (they have no author/owner column).
+- Not fixing the `viewer` "sees 0 articles" latent bug — it would require
+  `articles.manageAny` on a role `test/rbac-presets.test.ts` asserts is strictly
+  read-only (every permission ends in `.read`). Left as a pre-existing gap.
