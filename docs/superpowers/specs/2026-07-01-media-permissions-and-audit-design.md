@@ -21,10 +21,6 @@ Following the 0.10.0 articles row-level ownership work, the same audit surfaced 
    an edit page, nothing is logged. `logAudit` exists and is used for successful
    mutations, but not for blocked attempts — no trail for "who tried to touch what
    they don't own."
-4. **Admins can't tell who authored what in the articles list.** Since `manageAny`
-   holders see every article (added in 0.10.0), the list has no author column, so an
-   admin reviewing the queue can't tell authorship at a glance.
-
 ## Scope
 
 Media (`src/screens/media/*`, `src/lib/admin/media.ts`, `src/db/schema.ts`) and
@@ -114,13 +110,12 @@ before the existing redirect. Fire-and-forget, same pattern as every other
 logs `article.access_denied` with `metadata: { attemptedAction: "view" }` before
 redirecting.
 
-### 4. Author name in articles list (admin only)
+### 4. Author name in articles list — already implemented, dropped from scope
 
-- `src/lib/admin/articles.ts`: `listArticles` joins `users` on `articles.authorId` and
-  returns `authorName`. `countArticles` unchanged (no join needed for a count).
-- `src/screens/articles/page.tsx`: add a "Penulis" column to the table, rendered only
-  when `isAdmin` (i.e. `can(session.user.role, "articles.manageAny")`) — non-admins
-  only ever see their own articles, so the column would be redundant for them.
+Verified during planning: `listArticles` (`src/lib/admin/articles.ts:31-62`) already
+left-joins `users` and returns `authorName`, and `src/screens/articles/page.tsx:168`
+already renders `{item.authorName} · {item.categoryName} · ...` for every row,
+unconditionally. Nothing to build here — removed from this design.
 
 ## Testing
 
@@ -136,7 +131,6 @@ redirecting.
   `submitForReview`, `deleteMediaRow`) throw `OwnershipError` specifically (not plain
   `Error`), and that the action-layer catch blocks call `logAudit` with the right
   `action`/`metadata` on denial.
-- `listArticles` test asserting `authorName` is present in returned rows.
 
 ## Out of scope / explicitly not doing
 
