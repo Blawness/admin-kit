@@ -4,6 +4,28 @@ All notable changes to `@blawness/admin-kit` are documented here. This project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and the
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
+## [0.10.0] - 2026-07-01
+
+### Added
+- **`articles.manageAny` permission.** Explicit permission meaning "view/edit/
+  delete/submit any article, not just your own," replacing the previous
+  `articles.publish` proxy that RBAC screens reused for ownership-bypass
+  checks. Granted to `presets.permissions.contentEditor` (and therefore
+  `presets.fourTier.editor`); `presets.adminEditor.admin` already covers it
+  via `"*"`. `presets.fourTier.viewer`, `legacyEditor`, and `articleAuthor`
+  are unchanged.
+
+### Fixed
+- **Row-level ownership enforcement on articles is now consistent.**
+  `deleteArticle` previously had no ownership check at all — any role granted
+  `articles.delete` could delete any article regardless of author. It now
+  throws unless the caller is the author or has `articles.manageAny`.
+  `submitForReview` previously had no admin override; it now accepts an
+  optional `ctx: { isAdmin }` to allow a `manageAny` caller to submit on
+  behalf of another author. The articles list's delete button is now gated
+  on the actual `articles.delete` permission plus ownership/`manageAny`,
+  instead of the unrelated `articles.publish` permission.
+
 ## [0.9.0] - 2026-06-29
 
 ### Added
@@ -185,6 +207,7 @@ A large reliability, security, and DX release covering 22 findings.
 Initial public iteration of the admin-kit core (auth, media, users, editor,
 admin shell).
 
+[0.10.0]: https://github.com/Blawness/admin-kit/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/Blawness/admin-kit/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/Blawness/admin-kit/compare/v0.7.3...v0.8.0
 [0.7.2]: https://github.com/Blawness/admin-kit/compare/v0.7.1...v0.7.2
