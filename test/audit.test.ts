@@ -13,12 +13,14 @@ const VALID_ACTIONS = [
   "article.submit",
   "article.publish",
   "article.reject",
+  "article.access_denied",
   "category.create",
   "category.delete",
   "tag.create",
   "tag.delete",
   "media.upload",
   "media.delete",
+  "media.access_denied",
 ] as const;
 
 describe("audit action naming", () => {

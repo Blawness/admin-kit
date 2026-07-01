@@ -2,6 +2,7 @@ import { db } from "../../db/index";
 import { media } from "../../db/schema";
 import { and, desc, eq, ilike, or, sql, type SQL } from "drizzle-orm";
 import { escapeLike } from "../sql-utils";
+import { OwnershipError } from "./errors";
 
 export type MediaFilters = {
   q?: string;
@@ -52,6 +53,14 @@ export async function getMediaById(id: number) {
   return row ?? null;
 }
 
-export async function deleteMediaRow(id: number) {
+export async function deleteMediaRow(id: number, ctx: { userId: number; isAdmin: boolean }) {
+  const [existing] = await db
+    .select({ uploadedBy: media.uploadedBy })
+    .from(media)
+    .where(eq(media.id, id));
+  if (!existing) throw new Error("Media tidak ditemukan.");
+  if (!ctx.isAdmin && existing.uploadedBy !== ctx.userId) {
+    throw new OwnershipError("Tidak diizinkan menghapus gambar ini.");
+  }
   await db.delete(media).where(eq(media.id, id));
 }

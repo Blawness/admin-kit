@@ -3,6 +3,8 @@ import { requirePermission } from "../../lib/auth-helpers";
 import { deleteObjectByUrl } from "../../lib/storage/index";
 import { getMediaById, deleteMediaRow } from "../../lib/admin/media";
 import { revalidatePath } from "next/cache";
+import { getActiveRbac } from "../../rbac/registry";
+import { logAudit } from "../../lib/audit";
 
 /**
  * Generic delete-media logic, extracted from the server action so that the
@@ -16,7 +18,6 @@ export async function handleDeleteMedia(
   referenceChecker: (url: string) => Promise<number>,
 ): Promise<void> {
   const session = await requirePermission("media.delete");
-  void session;
   const id = Number(formData.get("id"));
   if (!id) return;
 
@@ -32,9 +33,21 @@ export async function handleDeleteMedia(
     );
   }
 
+  const isAdmin = getActiveRbac().can(session.user.role, "media.manageAny");
+  if (!isAdmin && row.uploadedBy !== Number(session.user.id)) {
+    logAudit({
+      actorId: Number(session.user.id),
+      action: "media.access_denied",
+      entityType: "media",
+      entityId: id,
+      metadata: { attemptedAction: "delete" },
+    }).catch(() => {});
+    redirect(`/admin/media?error=${encodeURIComponent("Tidak diizinkan menghapus gambar ini.")}`);
+  }
+
   // Hapus objek R2 lebih dulu; bila gagal, biarkan melempar agar row DB tetap
   // ada dan operasi bisa diulang (hindari row hilang tapi objek menggantung).
   await deleteObjectByUrl(row.url);
-  await deleteMediaRow(id);
+  await deleteMediaRow(id, { userId: Number(session.user.id), isAdmin });
   revalidatePath("/admin/media");
 }

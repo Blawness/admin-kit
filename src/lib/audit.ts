@@ -15,12 +15,14 @@ export type AuditAction =
   | "article.submit"
   | "article.publish"
   | "article.reject"
+  | "article.access_denied"
   | "category.create"
   | "category.delete"
   | "tag.create"
   | "tag.delete"
   | "media.upload"
   | "media.delete"
+  | "media.access_denied"
 
 type LogAuditParams = {
   actorId: number
