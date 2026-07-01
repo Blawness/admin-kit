@@ -17,6 +17,7 @@ import { sanitizeHtml } from "../../lib/sanitize";
 import { isUniqueViolation } from "../../lib/db-errors";
 import { ARTICLES_TAG } from "../../lib/cache-tags";
 import { logAudit } from "../../lib/audit";
+import { OwnershipError } from "../../lib/admin/errors";
 
 const articleSchema = z.object({
   title: z.string().min(3, "Judul minimal 3 karakter"),
@@ -113,6 +114,15 @@ export async function createArticleAction(fd: FormData) {
         entityId: articleId,
       }).catch(() => {});
     } catch (e) {
+      if (e instanceof OwnershipError) {
+        logAudit({
+          actorId: Number(session.user.id),
+          action: "article.access_denied",
+          entityType: "article",
+          entityId: articleId,
+          metadata: { attemptedAction: "submit" },
+        }).catch(() => {});
+      }
       const msg = e instanceof Error ? e.message : "Gagal mengajukan review.";
       redirect(`/admin/articles/edit?id=${articleId}&error=${encodeURIComponent(msg)}`);
     }
@@ -156,6 +166,15 @@ export async function updateArticleAction(fd: FormData) {
       entityId: id,
     }).catch(() => {});
   } catch (e) {
+    if (e instanceof OwnershipError) {
+      logAudit({
+        actorId: Number(session.user.id),
+        action: "article.access_denied",
+        entityType: "article",
+        entityId: id,
+        metadata: { attemptedAction: "update" },
+      }).catch(() => {});
+    }
     const msg = isUniqueViolation(e)
       ? "Slug sudah digunakan."
       : e instanceof Error
@@ -177,6 +196,15 @@ export async function updateArticleAction(fd: FormData) {
         entityId: id,
       }).catch(() => {});
     } catch (e) {
+      if (e instanceof OwnershipError) {
+        logAudit({
+          actorId: Number(session.user.id),
+          action: "article.access_denied",
+          entityType: "article",
+          entityId: id,
+          metadata: { attemptedAction: "submit" },
+        }).catch(() => {});
+      }
       const msg = e instanceof Error ? e.message : "Gagal mengajukan review.";
       redirect(`/admin/articles/edit?id=${id}&error=${encodeURIComponent(msg)}`);
     }
@@ -235,6 +263,15 @@ export async function deleteArticleAction(fd: FormData) {
   try {
     await deleteArticle(id, { userId: Number(session.user.id), isAdmin });
   } catch (e) {
+    if (e instanceof OwnershipError) {
+      logAudit({
+        actorId: Number(session.user.id),
+        action: "article.access_denied",
+        entityType: "article",
+        entityId: id,
+        metadata: { attemptedAction: "delete" },
+      }).catch(() => {});
+    }
     const msg = e instanceof Error ? e.message : "Gagal menghapus artikel.";
     redirect(`/admin/articles?error=${encodeURIComponent(msg)}`);
   }

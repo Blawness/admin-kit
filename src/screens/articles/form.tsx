@@ -3,6 +3,7 @@ import { requireUser } from "../../lib/auth-helpers";
 import { getActiveRbac } from "../../rbac/registry";
 import { getArticleById } from "../../lib/admin/articles";
 import { listCategories, listTags } from "../../lib/admin/categories";
+import { logAudit } from "../../lib/audit";
 import { ArticleForm } from "./article-form";
 import {
   createArticleAction,
@@ -30,6 +31,13 @@ export default async function ArticleFormScreen({
     const article = await getArticleById(Number(idParam));
     if (!article) redirect("/admin/articles");
     if (!isAdmin && article.authorId !== Number(session.user.id)) {
+      logAudit({
+        actorId: Number(session.user.id),
+        action: "article.access_denied",
+        entityType: "article",
+        entityId: article.id,
+        metadata: { attemptedAction: "view" },
+      }).catch(() => {});
       redirect("/admin/articles?error=Tidak+diizinkan");
     }
 
