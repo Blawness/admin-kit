@@ -7,6 +7,7 @@ const articleAuthor: Permission[] = [
 
 const contentEditor: Permission[] = [
   "articles.read", "articles.create", "articles.update", "articles.delete", "articles.publish",
+  "articles.manageAny",
   "categories.read", "categories.create", "categories.update", "categories.delete",
   "media.read", "media.upload", "media.delete",
   "profile.edit",
