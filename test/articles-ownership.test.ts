@@ -14,6 +14,7 @@ vi.mock("../src/db/index.ts", () => ({
 vi.mock("../src/lib/r2.ts", () => ({ deleteObjectByUrl: deleteObjectByUrlMock }));
 
 import { deleteArticle, submitForReview } from "../src/lib/admin/articles.ts";
+import { OwnershipError } from "../src/lib/admin/errors.ts";
 
 /** Make db.select(...).from(...).where(...) resolve to `rows`. */
 function selectReturning(rows: unknown[]) {
@@ -65,6 +66,13 @@ describe("deleteArticle", () => {
     await deleteArticle(5, { userId: 7, isAdmin: false });
     expect(deleteObjectByUrlMock).toHaveBeenCalledWith("https://cdn.example.com/x.jpg");
   });
+
+  it("throws OwnershipError (not a plain Error) when a non-owner is rejected", async () => {
+    selectReturning([{ coverImageUrl: null, authorId: 7 }]);
+    await expect(deleteArticle(5, { userId: 9, isAdmin: false })).rejects.toBeInstanceOf(
+      OwnershipError,
+    );
+  });
 });
 
 describe("submitForReview", () => {
@@ -89,5 +97,10 @@ describe("submitForReview", () => {
     selectReturning([{ authorId: 3, status: "draft", content: "<p>hello</p>" }]);
     await expect(submitForReview(1, 9, { isAdmin: true })).resolves.toBeUndefined();
     expect(mockUpdate).toHaveBeenCalled();
+  });
+
+  it("throws OwnershipError (not a plain Error) when a non-author is rejected", async () => {
+    selectReturning([{ authorId: 3, status: "draft", content: "<p>hello</p>" }]);
+    await expect(submitForReview(1, 9)).rejects.toBeInstanceOf(OwnershipError);
   });
 });

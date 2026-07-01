@@ -3,6 +3,7 @@ import { db } from "../../db/index";
 import { articles, users, categories, tags, articleTags } from "../../db/schema";
 import { deleteObjectByUrl } from "../r2";
 import { escapeLike } from "../sql-utils";
+import { OwnershipError } from "./errors";
 
 export type ArticleStatus = "draft" | "pending_review" | "published";
 
@@ -183,7 +184,7 @@ export async function updateArticle(
     .where(eq(articles.id, id));
   if (!existing) throw new Error("Artikel tidak ditemukan.");
   if (!ctx.isAdmin && existing.authorId !== ctx.userId)
-    throw new Error("Tidak diizinkan mengedit artikel ini.");
+    throw new OwnershipError("Tidak diizinkan mengedit artikel ini.");
 
   await db.transaction(async (tx) => {
     await tx
@@ -223,7 +224,7 @@ export async function submitForReview(id: number, userId: number, ctx?: { isAdmi
     .from(articles)
     .where(eq(articles.id, id));
   if (!existing) throw new Error("Artikel tidak ditemukan.");
-  if (!ctx?.isAdmin && existing.authorId !== userId) throw new Error("Tidak diizinkan.");
+  if (!ctx?.isAdmin && existing.authorId !== userId) throw new OwnershipError("Tidak diizinkan.");
   if (existing.status === "published") throw new Error("Artikel yang sudah dipublikasi tidak dapat diajukan ulang.");
   const stripped = existing.content?.replace(/<[^>]+>/g, "").trim() ?? "";
   if (!stripped) throw new Error("Konten artikel tidak boleh kosong saat mengajukan review.");
@@ -268,7 +269,7 @@ export async function deleteArticle(id: number, ctx: { userId: number; isAdmin: 
     .where(eq(articles.id, id));
   if (!existing) throw new Error("Artikel tidak ditemukan.");
   if (!ctx.isAdmin && existing.authorId !== ctx.userId)
-    throw new Error("Tidak diizinkan menghapus artikel ini.");
+    throw new OwnershipError("Tidak diizinkan menghapus artikel ini.");
 
   await db.delete(articles).where(eq(articles.id, id));
 
