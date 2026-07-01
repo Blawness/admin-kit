@@ -4,6 +4,28 @@ All notable changes to `@blawness/admin-kit` are documented here. This project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and the
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format.
 
+## [0.11.0] - 2026-07-01
+
+### Added
+- **`media.manageAny` permission** and row-level ownership on media delete. Media
+  uploads now record `uploadedBy`; `media.read` stays shared (any user with
+  `media.read` still sees and can reuse every uploaded file), but deleting a file
+  now requires being its uploader or holding `media.manageAny`. Granted to
+  `presets.permissions.contentEditor` and `presets.permissions.mediaManager`.
+  Pre-existing media rows have `uploadedBy: null` and are deletable only by
+  `media.manageAny` holders.
+- **`article.access_denied` / `media.access_denied` audit events.** Ownership and
+  permission denials (blocked article view/update/delete/submit attempts, blocked
+  media delete attempts) are now logged via `logAudit`, matching the existing
+  audit trail for successful mutations.
+
+### Fixed
+- **`media.read`/`media.upload`/`media.delete` permissions are now enforced.**
+  The built-in media screens (`src/screens/media/*`) previously only checked
+  `requireUser()` — any authenticated user could list, upload, or delete media
+  regardless of role/permission. They now call `requirePermission(...)` like every
+  other built-in screen.
+
 ## [0.10.0] - 2026-07-01
 
 ### Added
